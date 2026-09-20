@@ -1,4 +1,4 @@
-import { Card, Col, Row, Statistic, Progress, Typography, Button, Space, Tag, Input, App as AntdApp } from 'antd'
+import { Card, Col, Row, Statistic, Progress, Typography, Button, Space, Tag, Input, App as AntdApp, theme } from 'antd'
 import { CopyOutlined, EyeInvisibleOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { api, type Subscribe } from '../api'
@@ -7,8 +7,11 @@ import Loadable from '../components/Loadable'
 import { copyText, expiryState, formatBytes, formatDate } from '../utils/format'
 import { t } from '../i18n'
 
+const { useToken } = theme
+
 function SubscribeCard({ data, reload }: { data: Subscribe; reload: () => void }) {
   const { message } = AntdApp.useApp()
+  const { token } = useToken()
   const [revealed, setRevealed] = useState(false)
 
   const used = (data.u ?? 0) + (data.d ?? 0)
@@ -29,11 +32,11 @@ function SubscribeCard({ data, reload }: { data: Subscribe; reload: () => void }
       <Card
         title={t('subscription')}
         extra={<Button size="small" icon={<ReloadOutlined />} onClick={reload} />}
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: token.margin }}
       >
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <Space wrap size={8}>
-            <Typography.Text strong style={{ fontSize: 16 }}>
+        <Space direction="vertical" size={token.margin} style={{ width: '100%' }}>
+          <Space wrap size={token.marginXS}>
+            <Typography.Text strong style={{ fontSize: token.fontSizeLG }}>
               {data.plan?.name ?? t('planNone')}
             </Typography.Text>
             {hasPlan && expiry.kind === 'never' && <Tag color="green">{t('neverExpire')}</Tag>}
@@ -53,20 +56,20 @@ function SubscribeCard({ data, reload }: { data: Subscribe; reload: () => void }
               status={percent >= 100 ? 'exception' : 'normal'}
               format={(value) => `${value}%`}
             />
-            <Row gutter={16} style={{ marginTop: 8 }}>
+            <Row gutter={token.margin} style={{ marginTop: token.marginXS }}>
               <Col span={8}>
-                <Statistic title={t('dataUsed')} value={formatBytes(used)} valueStyle={{ fontSize: 16 }} />
+                <Statistic title={t('dataUsed')} value={formatBytes(used)} valueStyle={{ fontSize: token.fontSizeLG }} />
               </Col>
               <Col span={8}>
-                <Statistic title={t('dataLeft')} value={formatBytes(left)} valueStyle={{ fontSize: 16 }} />
+                <Statistic title={t('dataLeft')} value={formatBytes(left)} valueStyle={{ fontSize: token.fontSizeLG }} />
               </Col>
               <Col span={8}>
-                <Statistic title={t('dataTotal')} value={formatBytes(total)} valueStyle={{ fontSize: 16 }} />
+                <Statistic title={t('dataTotal')} value={formatBytes(total)} valueStyle={{ fontSize: token.fontSizeLG }} />
               </Col>
             </Row>
           </div>
 
-          <Row gutter={16}>
+          <Row gutter={token.margin}>
             <Col xs={12} md={8}>
               <Statistic
                 title={t('expireAt')}
@@ -77,21 +80,21 @@ function SubscribeCard({ data, reload }: { data: Subscribe; reload: () => void }
                       ? t('expired')
                       : formatDate(data.expired_at)
                 }
-                valueStyle={{ fontSize: 15 }}
+                valueStyle={{ fontSize: token.fontSize }}
               />
             </Col>
             <Col xs={12} md={8}>
               <Statistic
                 title={t('deviceLimit')}
                 value={data.device_limit ? String(data.device_limit) : t('unlimited')}
-                valueStyle={{ fontSize: 15 }}
+                valueStyle={{ fontSize: token.fontSize }}
               />
             </Col>
             <Col xs={12} md={8}>
               <Statistic
                 title={t('speedLimit')}
                 value={data.speed_limit ? `${data.speed_limit} Mbps` : t('unlimited')}
-                valueStyle={{ fontSize: 15 }}
+                valueStyle={{ fontSize: token.fontSize }}
               />
             </Col>
           </Row>

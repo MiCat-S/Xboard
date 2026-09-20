@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Layout, Menu, Button, Dropdown, Grid, Drawer, Typography, Space } from 'antd'
+import { Layout, Menu, Button, Dropdown, Grid, Drawer, Typography, Space, theme } from 'antd'
 import {
   DashboardOutlined,
   CloudServerOutlined,
@@ -14,8 +14,10 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { getLocale, setLocale, t, type Locale } from '../i18n'
 import { siteSettings } from '../settings'
+import { layout } from '../theme'
 
 const { Header, Sider, Content } = Layout
+const { useToken } = theme
 const { useBreakpoint } = Grid
 
 const NAV = [
@@ -31,6 +33,7 @@ export default function AppLayout() {
   const location = useLocation()
   const { signOut } = useAuth()
   const screens = useBreakpoint()
+  const { token } = useToken()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isMobile = !screens.md
@@ -59,15 +62,15 @@ export default function AppLayout() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {!isMobile && (
-        <Sider theme="light" width={216} breakpoint="md" collapsedWidth={0} trigger={null}>
+        <Sider theme="light" width={layout.siderWidth} breakpoint="md" collapsedWidth={0} trigger={null}>
           <div
             style={{
-              height: 56,
+              height: layout.headerHeight,
               display: 'flex',
               alignItems: 'center',
-              padding: '0 20px',
+              paddingInline: token.paddingLG,
               fontWeight: 600,
-              fontSize: 16,
+              fontSize: token.fontSizeLG,
             }}
           >
             {siteSettings.title}
@@ -79,19 +82,16 @@ export default function AppLayout() {
       <Layout>
         <Header
           style={{
-            background: 'transparent',
-            paddingInline: isMobile ? 12 : 24,
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
-            height: 56,
-            lineHeight: '56px',
+            gap: token.marginSM,
+            paddingInline: isMobile ? token.paddingSM : token.paddingLG,
           }}
         >
           {isMobile && (
             <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} />
           )}
-          <Typography.Text strong style={{ fontSize: 16 }}>
+          <Typography.Text strong style={{ fontSize: token.fontSizeLG }}>
             {t(NAV.find((n) => n.key === location.pathname)?.labelKey ?? 'navDashboard')}
           </Typography.Text>
           <span style={{ flex: 1 }} />
@@ -114,8 +114,8 @@ export default function AppLayout() {
           </Space>
         </Header>
 
-        <Content style={{ padding: isMobile ? 12 : 24, paddingTop: 0 }}>
-          <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+        <Content style={{ padding: isMobile ? token.paddingSM : token.paddingLG, paddingTop: 0 }}>
+          <div style={{ maxWidth: layout.contentMaxWidth, margin: '0 auto' }}>
             <Outlet />
           </div>
         </Content>
@@ -124,7 +124,7 @@ export default function AppLayout() {
       <Drawer
         open={drawerOpen}
         placement="left"
-        width={240}
+        width={layout.siderWidth + 24}
         onClose={() => setDrawerOpen(false)}
         title={siteSettings.title}
         styles={{ body: { padding: 0 } }}

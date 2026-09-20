@@ -1,4 +1,4 @@
-import { Button, Card, Descriptions, Form, Input, Popconfirm, Space, Typography, App as AntdApp } from 'antd'
+import { Button, Card, Descriptions, Form, Input, Popconfirm, Space, Typography, App as AntdApp, theme } from 'antd'
 import { useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
@@ -7,8 +7,11 @@ import Loadable from '../components/Loadable'
 import { formatDateTime } from '../utils/format'
 import { t } from '../i18n'
 
+const { useToken } = theme
+
 function ChangePassword() {
   const { message } = AntdApp.useApp()
+  const { token } = useToken()
   const { signOut } = useAuth()
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
@@ -34,7 +37,7 @@ function ChangePassword() {
   }
 
   return (
-    <Card title={t('changePassword')} style={{ marginTop: 16 }}>
+    <Card title={t('changePassword')} style={{ marginTop: token.margin }}>
       <Form layout="vertical" form={form} onFinish={onFinish} requiredMark={false} style={{ maxWidth: 380 }}>
         <Form.Item name="old_password" label={t('oldPassword')} rules={[{ required: true }]}>
           <Input.Password autoComplete="current-password" />
@@ -55,6 +58,7 @@ function ChangePassword() {
 
 function ResetSubscribe() {
   const { message } = AntdApp.useApp()
+  const { token } = useToken()
   const [loading, setLoading] = useState(false)
 
   const reset = async () => {
@@ -70,8 +74,8 @@ function ResetSubscribe() {
   }
 
   return (
-    <Card title={t('resetSubscribe')} style={{ marginTop: 16 }}>
-      <Space direction="vertical" size={12}>
+    <Card title={t('resetSubscribe')} style={{ marginTop: token.margin }}>
+      <Space direction="vertical" size={token.marginSM}>
         <Typography.Text type="secondary">{t('resetSubscribeHint')}</Typography.Text>
         <Popconfirm
           title={t('resetSubscribeConfirm')}

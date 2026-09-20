@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Card, List, Space, Tag, Typography } from 'antd'
+import { Alert, Badge, Button, Card, List, Space, Tag, Typography, theme } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useEffect } from 'react'
 import { api, type Device, type OnlineDevices } from '../api'
@@ -7,14 +7,18 @@ import Loadable from '../components/Loadable'
 import { formatDateTime } from '../utils/format'
 import { t } from '../i18n'
 
+const { useToken } = theme
+
 function DeviceRow({ device }: { device: Device }) {
+  const { token } = useToken()
+
   return (
     <List.Item>
       <List.Item.Meta
-        avatar={<Badge status={device.is_current_ip ? 'success' : 'warning'} style={{ marginTop: 8 }} />}
+        avatar={<Badge status={device.is_current_ip ? 'success' : 'warning'} style={{ marginTop: token.marginXS }} />}
         title={
-          <Space size={8} wrap>
-            <Typography.Text strong style={{ fontFamily: 'ui-monospace, Menlo, monospace' }}>
+          <Space size={token.marginXS} wrap>
+            <Typography.Text strong style={{ fontFamily: token.fontFamilyCode }}>
               {device.ip}
             </Typography.Text>
             {device.is_current_ip ? (
@@ -25,7 +29,7 @@ function DeviceRow({ device }: { device: Device }) {
           </Space>
         }
         description={
-          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+          <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
             {device.region || t('unknownRegion')}
             {' · '}
             {device.nodes.length ? device.nodes.join(' / ') : t('unknownNode')}
@@ -39,6 +43,7 @@ function DeviceRow({ device }: { device: Device }) {
 }
 
 export default function Devices() {
+  const { token } = useToken()
   const request = useRequest(() => api.onlineDevices())
 
   // 设备状态在 Redis 里只存 5 分钟，页面停留时定期刷新才有意义
@@ -61,7 +66,7 @@ export default function Devices() {
             showIcon
             message={t('devicesTitle')}
             description={t('devicesHint')}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: token.margin }}
           />
           <Card
             title={summary(data)}
@@ -72,7 +77,7 @@ export default function Devices() {
               locale={{ emptyText: t('devicesEmpty') }}
               renderItem={(device) => <DeviceRow key={device.ip} device={device} />}
             />
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
               {t('devicesFooter')}
             </Typography.Text>
           </Card>

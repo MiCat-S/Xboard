@@ -1,4 +1,4 @@
-import { Card, Table, Tag, Typography, Button } from 'antd'
+import { Card, Table, Tag, Typography, Button , theme } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { api, type TrafficLog } from '../api'
 import { useRequest } from '../hooks/useRequest'
@@ -6,7 +6,10 @@ import Loadable from '../components/Loadable'
 import { formatBytes, formatDate } from '../utils/format'
 import { t } from '../i18n'
 
+const { useToken } = theme
+
 export default function Traffic() {
+  const { token } = useToken()
   const request = useRequest(() => api.trafficLog())
 
   return (
@@ -56,7 +59,7 @@ export default function Traffic() {
               },
             ]}
           />
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
             {t('trafficHint')}
           </Typography.Text>
         </Card>

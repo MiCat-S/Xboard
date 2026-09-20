@@ -1,11 +1,14 @@
-import { Badge, Card, Table, Tag, Typography, Button, Space } from 'antd'
+import { Badge, Card, Table, Tag, Typography, Button, Space , theme } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { api, type Node } from '../api'
 import { useRequest } from '../hooks/useRequest'
 import Loadable from '../components/Loadable'
 import { t } from '../i18n'
 
+const { useToken } = theme
+
 export default function Nodes() {
+  const { token } = useToken()
   const request = useRequest(() => api.nodes())
 
   return (
@@ -57,7 +60,7 @@ export default function Nodes() {
               },
             ]}
           />
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
             {t('nodesHint')}
           </Typography.Text>
         </Card>

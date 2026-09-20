@@ -1,12 +1,12 @@
-import { Button, Card, Form, Input, Typography, App as AntdApp, Space } from 'antd'
+import { Button, Form, Input, App as AntdApp, Space } from 'antd'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { useRequest } from '../hooks/useRequest'
 import { t } from '../i18n'
-import { siteSettings } from '../settings'
 import EmailCodeButton from '../components/EmailCodeButton'
+import AuthShell from '../components/AuthShell'
 
 export default function SignUp() {
   const { signIn } = useAuth()
@@ -41,49 +41,45 @@ export default function SignUp() {
   }
 
   return (
-    <div className="auth-page">
-      <Card className="auth-card">
-        <Typography.Title level={4} style={{ marginTop: 0, textAlign: 'center' }}>
-          {siteSettings.title}
-        </Typography.Title>
-
-        <Form layout="vertical" form={form} onFinish={onFinish} requiredMark={false}>
-          <Form.Item name="email" label={t('email')} rules={[{ required: true, type: 'email' }]}>
-            <Input size="large" autoComplete="username" />
-          </Form.Item>
-
-          {config?.is_email_verify === 1 && (
-            <Form.Item name="email_code" label={t('emailCode')} rules={[{ required: true }]}>
-              <Space.Compact style={{ width: '100%' }}>
-                <Input size="large" />
-                <EmailCodeButton getEmail={() => form.getFieldValue('email')} />
-              </Space.Compact>
-            </Form.Item>
-          )}
-
-          <Form.Item name="password" label={t('password')} rules={[{ required: true, min: 8 }]}>
-            <Input.Password size="large" autoComplete="new-password" />
-          </Form.Item>
-          <Form.Item name="password_confirm" label={t('confirmPassword')} rules={[{ required: true }]}>
-            <Input.Password size="large" autoComplete="new-password" />
-          </Form.Item>
-          <Form.Item
-            name="invite_code"
-            label={config?.is_invite_force === 1 ? t('inviteCode') : t('inviteCodeOptional')}
-            rules={[{ required: config?.is_invite_force === 1 }]}
-          >
-            <Input size="large" />
-          </Form.Item>
-
-          <Button type="primary" size="large" htmlType="submit" loading={loading} block>
-            {t('signUp')}
-          </Button>
-        </Form>
-
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
+    <AuthShell
+      footer={
+        <div style={{ textAlign: 'center' }}>
           {t('hasAccount')} <Link to="/login">{t('signIn')}</Link>
         </div>
-      </Card>
-    </div>
+      }
+    >
+      <Form layout="vertical" form={form} onFinish={onFinish} requiredMark={false}>
+        <Form.Item name="email" label={t('email')} rules={[{ required: true, type: 'email' }]}>
+          <Input size="large" autoComplete="username" />
+        </Form.Item>
+
+        {config?.is_email_verify === 1 && (
+          <Form.Item name="email_code" label={t('emailCode')} rules={[{ required: true }]}>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input size="large" />
+              <EmailCodeButton getEmail={() => form.getFieldValue('email')} />
+            </Space.Compact>
+          </Form.Item>
+        )}
+
+        <Form.Item name="password" label={t('password')} rules={[{ required: true, min: 8 }]}>
+          <Input.Password size="large" autoComplete="new-password" />
+        </Form.Item>
+        <Form.Item name="password_confirm" label={t('confirmPassword')} rules={[{ required: true }]}>
+          <Input.Password size="large" autoComplete="new-password" />
+        </Form.Item>
+        <Form.Item
+          name="invite_code"
+          label={config?.is_invite_force === 1 ? t('inviteCode') : t('inviteCodeOptional')}
+          rules={[{ required: config?.is_invite_force === 1 }]}
+        >
+          <Input size="large" />
+        </Form.Item>
+
+        <Button type="primary" size="large" htmlType="submit" loading={loading} block>
+          {t('signUp')}
+        </Button>
+      </Form>
+    </AuthShell>
   )
 }

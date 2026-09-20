@@ -19,6 +19,35 @@ php artisan serve --host=127.0.0.1 --port=8000
 pnpm dev        # http://localhost:5173，/api 自动代理到 8000
 ```
 
+## 测试
+
+```bash
+pnpm test            # 跑一遍
+pnpm test:watch      # 开发时盯着跑
+pnpm test:coverage   # 带覆盖率
+```
+
+Vitest + Testing Library + jsdom。测试重点不是覆盖率数字，而是**把踩过的坑钉死**：
+
+| 文件 | 守住的东西 |
+| --- | --- |
+| `utils/format.test.ts` | `expired_at` 的三态（`0` 必须是「已过期」而不是「剩余 0 天」） |
+| `utils/order.test.ts` | 手续费公式必须与后端 `round(total * percent / 100 + fixed)` 一致 |
+| `api/client.test.ts` | 两种响应形状：标准包装 vs `checkout`/`invite/details` 的顶层结构；401/403 清 token |
+| `pages/OrderDetail.test.tsx` | 金额明细行不能消失（`Descriptions` 不穿透 Fragment）；三种支付分支 |
+| `pages/Sanitization.test.tsx` | 套餐介绍与文档正文的 HTML 必须过 DOMPurify |
+| `pages/Telegram.test.tsx` | 机器人未配置时不能把原始 cURL 错误甩给用户 |
+| `pages/Invite.test.tsx` | `stat` 定长数组的每个下标对应哪个数字 |
+| `pages/Plans.test.tsx` | 只展示有定价的周期；售罄判定；优惠码在**下单时**带上 |
+| `i18n/i18n.test.ts` | 两本字典键名一致、占位符一致、无空值 |
+
+写新用例时注意两点：
+
+- 语言在 `src/test/setup.ts` 里被固定成 `zh-CN`。i18n 是模块级一次性读取的，
+  必须在任何业务模块被 import 前设好，否则会跟着 jsdom 的 `navigator.language` 跑成英文。
+- 需要路由参数的页面用 `renderPage(ui, { initialEntries: ['/order/xxx'] })`，
+  否则 `useParams()` 拿到的是空串。
+
 ## 构建并启用
 
 ```bash

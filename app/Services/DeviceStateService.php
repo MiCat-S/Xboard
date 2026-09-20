@@ -146,6 +146,38 @@ class DeviceStateService
     }
 
     /**
+     * 获取单个用户的设备明细（含节点与最后上报时间，已过滤过期数据）
+     *
+     * 返回: [['node_id' => int, 'ip' => string, 'last_seen_at' => int], ...]
+     * 与 getUsersDevices() 的区别是保留了 node_id 和时间戳，供用户自查连接来源。
+     */
+    public function getUserDevices(int $userId): array
+    {
+        $data = Redis::hgetall(self::PREFIX . $userId);
+        $now = time();
+        $devices = [];
+
+        foreach ($data as $field => $timestamp) {
+            if ($now - (int) $timestamp > self::TTL) {
+                continue;
+            }
+
+            $separator = strpos($field, ':');
+            if ($separator === false) {
+                continue;
+            }
+
+            $devices[] = [
+                'node_id' => (int) substr($field, 0, $separator),
+                'ip' => substr($field, $separator + 1),
+                'last_seen_at' => (int) $timestamp,
+            ];
+        }
+
+        return $devices;
+    }
+
+    /**
      * get devices of multiple users (for sync.devices, filter expired data)
      */
     public function getUsersDevices(array $userIds): array

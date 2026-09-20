@@ -10,8 +10,11 @@ use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Server;
 use App\Services\Auth\LoginService;
 use App\Services\AuthService;
+use App\Services\DeviceStateService;
+use App\Services\IpLocationService;
 use App\Services\Plugin\HookManager;
 use App\Services\UserService;
 use App\Utils\CacheKey;
@@ -219,5 +222,63 @@ class UserController extends Controller
 
         $url = $this->loginService->generateQuickLoginUrl($user, $request->input('redirect'));
         return $this->success($url);
+    }
+
+    /**
+     * 当前在线设备（节点上报的连接来源 IP）
+     *
+     * 节点本来就会把每个用户的连接 IP 上报上来（/server/alive、WebSocket report.devices），
+     * 但此前只被用于设备数限制，IP 明细从未对用户开放。把它展示出来，用户看到陌生 IP
+     * 就能立刻察觉订阅链接被盗用。
+     *
+     * 只返回当前登录用户自己的数据。IP 按去重后归并，与设备数的统计口径一致。
+     */
+    public function getOnlineDevices(Request $request)
+    {
+        $user = $request->user();
+
+        $devices = app(DeviceStateService::class)->getUserDevices($user->id);
+
+        $nodeNames = empty($devices)
+            ? collect()
+            : Server::whereIn('id', array_unique(array_column($devices, 'node_id')))
+                ->pluck('name', 'id');
+
+        $regions = app(IpLocationService::class)
+            ->lookupMany(array_column($devices, 'ip'));
+
+        $currentIp = $request->ip();
+
+        // 同一个 IP 可能同时连着多个节点，按 IP 归并——设备数也是按去重 IP 计的
+        $grouped = [];
+        foreach ($devices as $device) {
+            $ip = $device['ip'];
+
+            if (!isset($grouped[$ip])) {
+                $grouped[$ip] = [
+                    'ip' => $ip,
+                    'region' => $regions[$ip] ?? null,
+                    'nodes' => [],
+                    'last_seen_at' => 0,
+                    'is_current_ip' => $ip === $currentIp,
+                ];
+            }
+
+            $nodeName = $nodeNames[$device['node_id']] ?? null;
+            if ($nodeName !== null && !in_array($nodeName, $grouped[$ip]['nodes'], true)) {
+                $grouped[$ip]['nodes'][] = $nodeName;
+            }
+
+            $grouped[$ip]['last_seen_at'] = max($grouped[$ip]['last_seen_at'], $device['last_seen_at']);
+        }
+
+        $list = collect($grouped)->sortByDesc('last_seen_at')->values();
+
+        return $this->success([
+            'device_limit' => $user->device_limit,
+            'online_count' => $list->count(),
+            'current_ip' => $currentIp,
+            'devices' => $list,
+        ]);
     }
 }

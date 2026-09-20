@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <!-- 固定一把仅用于测试的 key，避免依赖开发者本地的 .env -->
+        <env name="APP_KEY" value="base64:Kg8pQ2xhdWRlVGVzdEtleUZvclhib2FyZFN1aXRlMDE9"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_URL" value="http://localhost"/>
+        <!-- 内存 sqlite：注意 config/database.php 对 DB_DATABASE 套了 base_path()，
+             所以这里用 DB_CONNECTION=sqlite_testing 单独走一份连接配置 -->
+        <env name="DB_CONNECTION" value="sqlite_testing"/>
+        <env name="CACHE_DRIVER" value="array"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="BROADCAST_DRIVER" value="log"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+    </php>
+</phpunit>

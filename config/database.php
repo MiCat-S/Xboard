@@ -46,6 +46,16 @@ return [
             'synchronous' => env('DB_SYNCHRONOUS', 'normal'),
         ],
 
+        // 测试专用：内存 sqlite。单独一份配置是因为上面的 'sqlite' 会对
+        // DB_DATABASE 套 base_path()，无法表达 ':memory:'。
+        'sqlite_testing' => [
+            'driver' => 'sqlite',
+            'url' => null,
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),

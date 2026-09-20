@@ -5,6 +5,9 @@ import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import Forget from './pages/Forget'
 import Dashboard from './pages/Dashboard'
+import Plans from './pages/Plans'
+import Orders from './pages/Orders'
+import OrderDetail from './pages/OrderDetail'
 import Nodes from './pages/Nodes'
 import Devices from './pages/Devices'
 import Traffic from './pages/Traffic'
@@ -23,6 +26,9 @@ export default function App() {
         {authenticated ? (
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/order/:tradeNo" element={<OrderDetail />} />
             <Route path="/nodes" element={<Nodes />} />
             <Route path="/devices" element={<Devices />} />
             <Route path="/traffic" element={<Traffic />} />

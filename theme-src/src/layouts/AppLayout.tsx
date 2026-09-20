@@ -3,6 +3,8 @@ import { Layout, Menu, Button, Dropdown, Grid, Drawer, Typography, Space, theme 
 import {
   DashboardOutlined,
   CloudServerOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
   DesktopOutlined,
   BarChartOutlined,
   UserOutlined,
@@ -22,6 +24,8 @@ const { useBreakpoint } = Grid
 
 const NAV = [
   { key: '/dashboard', icon: <DashboardOutlined />, labelKey: 'navDashboard' as const },
+  { key: '/plans', icon: <ShoppingOutlined />, labelKey: 'navPlans' as const },
+  { key: '/orders', icon: <FileTextOutlined />, labelKey: 'navOrders' as const },
   { key: '/nodes', icon: <CloudServerOutlined />, labelKey: 'navNodes' as const },
   { key: '/devices', icon: <DesktopOutlined />, labelKey: 'navDevices' as const },
   { key: '/traffic', icon: <BarChartOutlined />, labelKey: 'navTraffic' as const },
@@ -92,7 +96,9 @@ export default function AppLayout() {
             <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} />
           )}
           <Typography.Text strong style={{ fontSize: token.fontSizeLG }}>
-            {t(NAV.find((n) => n.key === location.pathname)?.labelKey ?? 'navDashboard')}
+            {location.pathname.startsWith('/order/')
+              ? t('orderDetail')
+              : t(NAV.find((n) => n.key === location.pathname)?.labelKey ?? 'navDashboard')}
           </Typography.Text>
           <span style={{ flex: 1 }} />
           <Space size={4}>

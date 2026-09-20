@@ -13,7 +13,6 @@ class PaymentService
     protected $config;
     protected $payment;
     protected $pluginManager;
-    protected $class;
 
     public function __construct($method, $id = NULL, $uuid = NULL)
     {
@@ -61,7 +60,10 @@ class PaymentService
             }
         }
 
-        $this->payment = new $this->class($this->config);
+        // 走到这里说明后台配了这个支付方式，但对应插件没安装或被禁用。
+        // 原来是 `new $this->class(...)`，而 $class 从未被赋值，只会抛 TypeError
+        // 变成一个没有信息量的 500。
+        throw new ApiException("Payment method [{$this->method}] is unavailable, the matching plugin is missing or disabled");
     }
 
     public function notify($params)

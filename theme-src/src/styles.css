@@ -13,3 +13,23 @@ body {
 .break-all {
   word-break: break-all;
 }
+
+/* 套餐介绍是后台填的富文本，限制一下它能撑开的范围 */
+.plan-content {
+  font-size: 0.9em;
+  line-height: 1.7;
+}
+
+.plan-content :is(p, ul, ol) {
+  margin: 0 0 0.5em;
+}
+
+.plan-content ul,
+.plan-content ol {
+  padding-inline-start: 1.25em;
+}
+
+.plan-content img {
+  max-width: 100%;
+  height: auto;
+}

@@ -11,6 +11,8 @@ import OrderDetail from './pages/OrderDetail'
 import Nodes from './pages/Nodes'
 import Devices from './pages/Devices'
 import Traffic from './pages/Traffic'
+import Tickets from './pages/Tickets'
+import Invite from './pages/Invite'
 import Account from './pages/Account'
 
 /**
@@ -32,6 +34,8 @@ export default function App() {
             <Route path="/nodes" element={<Nodes />} />
             <Route path="/devices" element={<Devices />} />
             <Route path="/traffic" element={<Traffic />} />
+            <Route path="/tickets" element={<Tickets />} />
+            <Route path="/invite" element={<Invite />} />
             <Route path="/account" element={<Account />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

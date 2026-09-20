@@ -1,4 +1,4 @@
-import { get, post, postRaw } from './client'
+import { get, getRaw, post, postRaw } from './client'
 
 export interface GuestConfig {
   tos_url: string | null
@@ -166,6 +166,64 @@ export interface CheckoutResult {
   data: string | boolean
 }
 
+/** 0 开启 / 1 关闭 */
+export type TicketStatus = 0 | 1
+/** 0 低 / 1 中 / 2 高 */
+export type TicketLevel = 0 | 1 | 2
+
+export interface TicketMessage {
+  id: number
+  ticket_id: number
+  /** 后端叫 is_me，其实是 is_from_user——true 表示这条是用户发的 */
+  is_me: boolean | number
+  message: string
+  created_at: number
+}
+
+export interface Ticket {
+  id: number
+  level: TicketLevel
+  /** 0 待客服回复 / 1 已回复 */
+  reply_status: 0 | 1
+  status: TicketStatus
+  subject: string
+  message: TicketMessage[] | null
+  created_at: number
+  updated_at: number
+}
+
+export interface InviteCode {
+  code: string
+  pv: number
+  status: number
+  created_at: number
+}
+
+/** [已注册人数, 已确认佣金, 确认中佣金, 佣金比例%, 可用佣金] —— 金额单位分 */
+export type InviteStat = [number, number, number, number, number]
+
+export interface InviteData {
+  codes: InviteCode[]
+  stat: InviteStat
+}
+
+export interface CommissionLog {
+  id: number
+  order_amount: number
+  trade_no: string
+  get_amount: number
+  created_at: number
+}
+
+export interface UserConfig {
+  is_telegram: number
+  telegram_discuss_link: string | null
+  withdraw_methods: string[]
+  withdraw_close: number
+  currency: string
+  currency_symbol: string
+}
+
 export const api = {
   guestConfig: () => get<GuestConfig>('/guest/comm/config'),
 
@@ -211,4 +269,22 @@ export const api = {
 
   checkout: (trade_no: string, method: number) =>
     postRaw<CheckoutResult>('/user/order/checkout', { trade_no, method }),
+
+  userConfig: () => get<UserConfig>('/user/comm/config'),
+
+  tickets: () => get<Ticket[]>('/user/ticket/fetch'),
+  ticket: (id: number) => get<Ticket>('/user/ticket/fetch', { id }),
+  createTicket: (subject: string, level: TicketLevel, message: string) =>
+    post<boolean>('/user/ticket/save', { subject, level, message }),
+  replyTicket: (id: number, message: string) =>
+    post<boolean>('/user/ticket/reply', { id, message }),
+  closeTicket: (id: number) => post<boolean>('/user/ticket/close', { id }),
+  withdraw: (withdraw_method: string, withdraw_account: string) =>
+    post<boolean>('/user/ticket/withdraw', { withdraw_method, withdraw_account }),
+
+  invites: () => get<InviteData>('/user/invite/fetch'),
+  createInviteCode: () => get<boolean>('/user/invite/save'),
+  /** 这个接口返回的是顶层 {data, total}，没有外层 data 包装 */
+  commissionLogs: (current: number, page_size: number) =>
+    getRaw<{ data: CommissionLog[]; total: number }>('/user/invite/details', { current, page_size }),
 }

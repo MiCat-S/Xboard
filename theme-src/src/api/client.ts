@@ -75,10 +75,16 @@ export async function post<T>(url: string, body?: Record<string, unknown>): Prom
 
 /**
  * 拿整个响应体，不做 data 解包。
- * order/checkout 这类接口直接返回 {type, data}，没有外层 data 包装。
+ * order/checkout、invite/details 这类接口直接返回顶层结构，
+ * 没有外层 data 包装。
  */
 export async function postRaw<T>(url: string, body?: Record<string, unknown>): Promise<T> {
   const response = await http.post(url, body)
+  return response.data as T
+}
+
+export async function getRaw<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+  const response = await http.get(url, { params })
   return response.data as T
 }
 

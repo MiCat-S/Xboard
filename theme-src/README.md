@@ -44,12 +44,14 @@ php artisan view:clear
 | 购买订阅 | `#/plans` | `user/plan/fetch`、`user/coupon/check`、`user/order/save` |
 | 我的订单 | `#/orders` | `user/order/fetch`、`user/order/cancel` |
 | 订单详情/支付 | `#/order/:tradeNo` | `user/order/detail`、`user/order/getPaymentMethod`、`user/order/checkout`、`user/order/check` |
+| 我的工单 | `#/tickets` | `user/ticket/fetch`、`user/ticket/save`、`user/ticket/reply`、`user/ticket/close` |
+| 邀请返利 | `#/invite` | `user/invite/fetch`、`user/invite/save`、`user/invite/details`、`user/ticket/withdraw`、`user/comm/config` |
 
 ## 还没做
 
-工单、邀请佣金、知识库。这些接口后端都有（`app/Http/Routes/V1/UserRoute.php`
-一共 43 条），按现有的 `src/api/index.ts` 加方法、`src/pages/` 加页面、
-`src/layouts/AppLayout.tsx` 的 `NAV` 加一项即可。
+知识库（`user/knowledge/*`）、Telegram 绑定、通知公告。按现有的
+`src/api/index.ts` 加方法、`src/pages/` 加页面、`src/layouts/AppLayout.tsx`
+的 `NAV` 加一项即可。
 
 ## 几个容易踩的点
 
@@ -73,3 +75,11 @@ php artisan view:clear
 - **`Descriptions` 不会穿透 Fragment**。把 `Descriptions.Item` 包在自定义组件里返回，
   那几行会静默消失，得用 `items` 属性传数组。
 - 套餐介绍 `content` 是后台填的富文本，必须渲染成 HTML，所以过一遍 DOMPurify 再插入。
+- **`user/invite/details` 不走标准包装**，直接返回顶层 `{data, total}`，得用
+  `getRaw()`，否则分页总数拿不到。`order/checkout` 同理。
+- **工单消息的 `is_me` 是计算出来的**，不是数据库字段：后端比较
+  `message.user_id === ticket.user_id`。造测试数据时写 `is_from_user` 会直接报列不存在。
+- **后端不允许同时存在多个未关闭工单**。新建工单和申请提现（提现本身也是开工单）
+  在有未结工单时都会被拒，错误文案是「存在未关闭的工单」，前端如实透出即可。
+- `invite/fetch` 的 `stat` 是定长数组
+  `[已注册人数, 已确认佣金, 确认中佣金, 佣金比例%, 可用佣金]`，金额单位是分。

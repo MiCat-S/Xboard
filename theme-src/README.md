@@ -40,13 +40,25 @@ Vitest + Testing Library + jsdom。测试重点不是覆盖率数字，而是**�
 | `pages/Invite.test.tsx` | `stat` 定长数组的每个下标对应哪个数字 |
 | `pages/Plans.test.tsx` | 只展示有定价的周期；售罄判定；优惠码在**下单时**带上 |
 | `i18n/i18n.test.ts` | 两本字典键名一致、占位符一致、无空值 |
+| `layouts/AppLayout.test.tsx` | 导航项齐全、当前页高亮、订单详情的标题回落、退出登录清 token、手机端抽屉 |
 
-写新用例时注意两点：
+写新用例时注意这几点，都是踩过才知道的：
 
-- 语言在 `src/test/setup.ts` 里被固定成 `zh-CN`。i18n 是模块级一次性读取的，
-  必须在任何业务模块被 import 前设好，否则会跟着 jsdom 的 `navigator.language` 跑成英文。
-- 需要路由参数的页面用 `renderPage(ui, { initialEntries: ['/order/xxx'] })`，
+- **语言固定在 `src/test/setup.ts`**。i18n 是模块级一次性读取的，必须在任何业务模块
+  被 import 前设好，否则会跟着 jsdom 的 `navigator.language` 跑成英文。同理，
+  setup 里复位语言只能用**动态** `import('../i18n')`——顶部静态导入会把 i18n
+  拉到 `localStorage.setItem` 之前初始化，结果适得其反。
+- **`setLocale` 改的是模块级变量**，切过语言的用例会污染后面所有用例的文案，
+  所以 `afterEach` 统一复位。
+- **jsdom 没有 `matchMedia`**，而 antd 的 `Grid.useBreakpoint` 完全靠它。默认按桌面
+  宽度回答；要测移动端用 `setViewportWidth(MOBILE_WIDTH)`。
+- **antd 的 Modal/Drawer/Dropdown 走 portal**，挂在 body 上，`cleanup()` 不一定清得干净，
+  所以 `afterEach` 里直接清空 body，避免 `document.querySelector` 抓到上个用例的残留。
+- **菜单项的可访问名称里混着图标的 `aria-label`**（如 "dashboard 仪表板"），
+  `getByRole('menuitem', { name })` 要用正则而不是精确匹配。
+- **需要路由参数的页面**用 `renderPage(ui, { initialEntries: ['/order/xxx'] })`，
   否则 `useParams()` 拿到的是空串。
+- 改完记得连跑几次确认不 flaky——上面几条里有一半是「单独跑过、整文件跑挂」暴露出来的。
 
 ## 构建并启用
 

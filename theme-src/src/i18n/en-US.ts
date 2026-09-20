@@ -5,7 +5,6 @@ const enUS: Record<keyof typeof zhCN, string> = {
 
   navDashboard: 'Dashboard',
   navNodes: 'Nodes',
-  navDevices: 'Devices',
   navTraffic: 'Traffic',
   navAccount: 'Account',
   signOut: 'Sign out',
@@ -61,13 +60,6 @@ const enUS: Record<keyof typeof zhCN, string> = {
   nodesEmpty: 'No nodes available',
   nodesHint: 'Status reflects node heartbeats from the last five minutes',
 
-  devicesTitle: 'Online devices',
-  devicesHint:
-    'These are the source IPs your nodes have seen in the last few minutes. An address you do not recognise may mean your subscription link has been shared or stolen.',
-  devicesFooter:
-    'Device records expire a few minutes after a connection stops, so this list only reflects recent activity. If you see an address that is not yours, reset your subscription link under Account.',
-  devicesEmpty: 'No active connections right now',
-  thisDevice: 'This device',
   unknownRegion: 'Unknown location',
   unknownNode: 'Unknown node',
   inUse: ':n in use',

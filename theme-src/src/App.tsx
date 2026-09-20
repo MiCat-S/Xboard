@@ -9,7 +9,6 @@ import Plans from './pages/Plans'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import Nodes from './pages/Nodes'
-import Devices from './pages/Devices'
 import Traffic from './pages/Traffic'
 import Tickets from './pages/Tickets'
 import Invite from './pages/Invite'
@@ -34,7 +33,6 @@ export default function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/order/:tradeNo" element={<OrderDetail />} />
             <Route path="/nodes" element={<Nodes />} />
-            <Route path="/devices" element={<Devices />} />
             <Route path="/traffic" element={<Traffic />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/invite" element={<Invite />} />

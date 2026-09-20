@@ -50,7 +50,7 @@ describe('AppLayout', () => {
     renderLayout()
 
     for (const label of [
-      '仪表板', '购买订阅', '我的订单', '节点状态', '在线设备',
+      '仪表板', '购买订阅', '我的订单', '节点状态',
       '流量明细', '使用文档', '我的工单', '邀请返利', 'Telegram', '我的账户',
     ]) {
       expect(menuItem(label)).toBeInTheDocument()

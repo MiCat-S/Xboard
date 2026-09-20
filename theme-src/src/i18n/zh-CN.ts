@@ -3,7 +3,6 @@ export default {
 
   navDashboard: '仪表板',
   navNodes: '节点状态',
-  navDevices: '在线设备',
   navTraffic: '流量明细',
   navAccount: '我的账户',
   signOut: '退出登录',
@@ -59,11 +58,6 @@ export default {
   nodesEmpty: '暂无可用节点',
   nodesHint: '状态为最近五分钟内的节点心跳',
 
-  devicesTitle: '在线设备',
-  devicesHint: '这些是节点在最近几分钟内看到的连接来源 IP。出现你不认识的地址，可能意味着订阅链接被分享或被盗用。',
-  devicesFooter: '连接断开几分钟后记录就会过期，所以这里只反映近期活动。若看到不属于你的地址，请到「我的账户」重置订阅链接。',
-  devicesEmpty: '当前没有活动连接',
-  thisDevice: '本机',
   unknownRegion: '归属地未知',
   unknownNode: '未知节点',
   inUse: '已用 :n 台',

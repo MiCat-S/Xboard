@@ -64,21 +64,6 @@ export interface Node {
   last_check_at: number | null
 }
 
-export interface Device {
-  ip: string
-  region: string | null
-  nodes: string[]
-  last_seen_at: number
-  is_current_ip: boolean
-}
-
-export interface OnlineDevices {
-  device_limit: number | null
-  online_count: number
-  current_ip: string
-  devices: Device[]
-}
-
 export interface TrafficLog {
   u: number
   d: number
@@ -261,7 +246,6 @@ export const api = {
   /** [待支付订单数, 未结工单数, 已邀请人数] */
   stat: () => get<number[]>('/user/getStat'),
   nodes: () => get<Node[]>('/user/server/fetch'),
-  onlineDevices: () => get<OnlineDevices>('/user/getOnlineDevices'),
   trafficLog: () => get<TrafficLog[]>('/user/stat/getTrafficLog'),
 
   changePassword: (old_password: string, new_password: string) =>

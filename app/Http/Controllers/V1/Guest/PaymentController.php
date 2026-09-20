@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Guest;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\OrderService;
@@ -39,6 +40,15 @@ class PaymentController extends Controller
                 return $this->fail([400, 'handle error']);
             }
             return (isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
+        } catch (ApiException $e) {
+            // 插件主动抛的异常自带状态码和可安全外泄的文案（签名不符是 400，
+            // 不是 500）。兜底的 catch 会把它压成 500，丢掉这个区分。
+            Log::warning('payment notify rejected', [
+                'method' => $method,
+                'reason' => $e->getMessage(),
+            ]);
+            HookManager::call('payment.notify.failed', [$method, $uuid, $request]);
+            throw $e;
         } catch (\Exception $e) {
             Log::error($e);
             return $this->fail([500, 'fail']);
@@ -49,7 +59,11 @@ class PaymentController extends Controller
     {
         $order = Order::where('trade_no', $tradeNo)->first();
         if (!$order) {
-            return $this->fail([400202, 'order is not found']);
+            // 这里原本 return $this->fail(...)，而 fail() 返回的 JsonResponse 是
+            // truthy，调用方的 if (!$this->handle(...)) 判不出失败，网关反而会
+            // 收到 success。订单号对不上必须如实报失败。
+            Log::warning('payment notify for an unknown order', ['trade_no' => $tradeNo]);
+            return false;
         }
         if ($order->status !== Order::STATUS_PENDING)
             return true;

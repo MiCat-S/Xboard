@@ -1,0 +1,137 @@
+name: Tests
+
+on:
+  push:
+    branches: ["master", "new-dev", "security/**"]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上只保留最新一次运行
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # composer.json 要求 ^8.2；两头都跑，避免只在某一版上能过
+        php: ["8.2", "8.4"]
+
+    services:
+      # DeviceStateService 直接用 Redis，没有它那几个用例只会被跳过
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: bcmath, pcntl, redis, sqlite3, zip
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit
+        env:
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+      - name: PHPStan
+        # 只在一个版本上跑，静态分析结果与 PHP 运行版本无关
+        if: matrix.php == '8.4'
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: theme-src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: theme-src/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Vitest
+        run: pnpm test
+
+      - name: antd lint
+        # 查 API 用法是否过时/不正确，版本跟着项目实际装的走
+        run: |
+          npm install -g @ant-design/cli
+          # 读实际安装的版本，不是 package.json 里的范围下限
+          ANTD_VERSION=$(node -p "require('antd/package.json').version")
+          antd lint ./src --version "$ANTD_VERSION" --format json | tee antd-lint.json
+          node -e "
+            const r = require('./antd-lint.json');
+            if (r.summary.total > 0) { console.error(r.issues); process.exit(1); }
+          "
+
+  build:
+    name: Theme build
+    runs-on: ubuntu-latest
+    needs: frontend
+    defaults:
+      run:
+        working-directory: theme-src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: theme-src/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # 构建产物是提交进仓库的。如果有人改了源码却忘记重新构建，
+      # 部署出去的就还是旧的界面——这里把它拦下来。
+      - name: Committed bundle is up to date
+        run: |
+          rm -f ../theme/Nova/assets/index.html
+          if ! git diff --quiet -- ../theme/Nova/assets; then
+            echo "::error::theme/Nova/assets 与 theme-src 的源码不同步，请在本地跑 pnpm build 后提交产物"
+            git diff --stat -- ../theme/Nova/assets
+            exit 1
+          fi

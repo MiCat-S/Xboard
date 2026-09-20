@@ -41,6 +41,7 @@ Vitest + Testing Library + jsdom。测试重点不是覆盖率数字，而是**�
 | `pages/Plans.test.tsx` | 只展示有定价的周期；售罄判定；优惠码在**下单时**带上 |
 | `i18n/i18n.test.ts` | 两本字典键名一致、占位符一致、无空值 |
 | `layouts/AppLayout.test.tsx` | 导航项齐全、当前页高亮、订单详情的标题回落、退出登录清 token、手机端抽屉 |
+| `pages/Tickets.test.tsx` | 对话只在打开时才拉、双方消息区分、回复后详情与列表都刷新、已关闭工单不给回复框、后端「存在未关闭的工单」如实透出 |
 
 写新用例时注意这几点，都是踩过才知道的：
 

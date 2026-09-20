@@ -87,18 +87,6 @@ Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path
     ]);
 });
 
-/**
- * 在线设备自查页。
- *
- * 用户面板是预构建产物、本仓库没有源码，无法在面板内加页面，所以这里提供一个
- * 独立的服务端渲染页：它只依赖公开 API，自己完成一次登录，不碰主题的 SPA。
- */
-Route::get('/devices', function () {
-    return view('client.devices', [
-        'app_name' => admin_setting('app_name', 'XBoard'),
-    ]);
-})->name('client.devices');
-
 Route::get('/' . (admin_setting('subscribe_path', 's')) . '/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])
     ->middleware('client')
     ->name('client.subscribe');

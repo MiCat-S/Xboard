@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\File;
 class UpdateService
 {
     const UPDATE_CHECK_INTERVAL = 86400; // 24 hours
-    const GITHUB_API_URL = 'https://api.github.com/repos/cedar2025/xboard/commits';
+    // 必须和 pullLatestCode() 实际拉取的来源一致——那里跑的是
+    // `git reset --hard origin/master`，origin 就是本仓库。指向上游的话，
+    // 本仓库的 commit 永远不在对方列表里，只会一直误报「有更新」。
+    const GITHUB_API_URL = 'https://api.github.com/repos/MiCat-S/Xboard/commits';
     const CACHE_UPDATE_INFO = 'UPDATE_INFO';
     const CACHE_LAST_CHECK = 'LAST_UPDATE_CHECK';
     const CACHE_UPDATE_LOCK = 'UPDATE_LOCK';

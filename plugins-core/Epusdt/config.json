@@ -1,0 +1,8 @@
+{
+    "name": "Epusdt",
+    "code": "epusdt",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "Epusdt / GM Pay 自建加密货币收款网关",
+    "author": "XBoard Team"
+}

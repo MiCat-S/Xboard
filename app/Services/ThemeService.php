@@ -15,7 +15,8 @@ class ThemeService
     private const USER_THEME_DIR = '/storage/theme/';
     private const CONFIG_FILE = 'config.json';
     private const SETTING_PREFIX = 'theme_';
-    private const SYSTEM_THEMES = ['Xboard', 'v2board'];
+    // 随仓库一起发布的主题，删不得（Nova 的源码在 theme-src/）
+    private const SYSTEM_THEMES = ['Xboard', 'v2board', 'Nova'];
     /** 主题名会直接参与拼接文件路径，必须限制为不含分隔符的安全字符 */
     private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
 
@@ -93,7 +94,7 @@ class ThemeService
                     return [];
                 }
 
-                $config['can_delete'] = $canDelete && $name !== admin_setting('current_theme');
+                $config['can_delete'] = $canDelete && $name !== $this->activeTheme();
                 $config['is_system'] = !$canDelete;
                 return [$name => $config];
             })->toArray();
@@ -190,6 +191,20 @@ class ThemeService
     /**
      * Switch theme
      */
+    /**
+     * 当前实际生效的主题。
+     *
+     * 渲染端读 frontend_theme，而 switch() 历史上只写 current_theme，两者可能
+     * 不一致、也可能都没设过（老站点就是 NULL）。判断「哪个主题正在用」必须
+     * 走这里，否则 NULL 会被当成「没有主题在用」——下面的删除防护就形同虚设。
+     */
+    public function activeTheme(): string
+    {
+        return admin_setting('frontend_theme')
+            ?? admin_setting('current_theme')
+            ?? 'Xboard';
+    }
+
     public function switch(string|null $theme): bool
     {
         if ($theme === null) {
@@ -221,7 +236,13 @@ class ThemeService
                 throw new Exception('Failed to copy theme files');
             }
 
-            admin_setting(['current_theme' => $theme]);
+            // 渲染端（routes/web.php）和后台的「当前启用」读的都是 frontend_theme，
+            // 而这里原本只写 current_theme —— 两个键从不同步，导致后台那个
+            // 「切换主题」按钮点了没有任何效果。两个都写。
+            admin_setting([
+                'current_theme' => $theme,
+                'frontend_theme' => $theme,
+            ]);
             return true;
 
         } catch (Exception $e) {
@@ -244,7 +265,7 @@ class ThemeService
                 throw new Exception('System theme cannot be deleted');
             }
 
-            if ($theme === admin_setting('current_theme')) {
+            if ($theme === $this->activeTheme()) {
                 throw new Exception('Current theme cannot be deleted');
             }
 

@@ -153,6 +153,13 @@
   <script>
     (function () {
       var STORAGE_KEY = 'xboard_devices_auth';
+
+      // 面板 SPA 把登录态存在同源的 localStorage 里（vue-naive-admin 的 storage helper：
+      // 键名是 (前缀+键).toUpperCase()，值是 {value, time, expire}，value 即完整的
+      // Authorization 头）。同源可读，所以已登录面板的用户不必在这里重登一次。
+      // 第三方主题的键名不同，读不到就退回登录表单，不会出错。
+      // Nova 主题存的是裸 token 字符串，旧 Xboard 主题存的是 {value,time,expire}
+      var PANEL_TOKEN_KEYS = ['xboard_access_token', 'VUE_NAIVE_ACCESS_TOKEN'];
       var TEXT = {
         signingIn: @json(__('Signing in...')),
         loading: @json(__('Loading...')),
@@ -168,6 +175,8 @@
         sessionExpired: @json(__('Not logged in or login expired'))
       };
 
+      var usingPanelSession = false;
+
       var loginCard = document.getElementById('login-card');
       var devicesCard = document.getElementById('devices-card');
       var loginForm = document.getElementById('login-form');
@@ -178,7 +187,7 @@
       var submitBtn = document.getElementById('login-submit');
       var refreshTimer = null;
 
-      function token(value) {
+      function ownToken(value) {
         try {
           if (value === undefined) return sessionStorage.getItem(STORAGE_KEY);
           if (value === null) sessionStorage.removeItem(STORAGE_KEY);
@@ -187,6 +196,45 @@
           // 隐私模式下 sessionStorage 可能不可用，退化为仅本次可用
         }
         return value;
+      }
+
+      // 只读，不回写：不去干扰面板自己的登录态，也不延长它设定的有效期
+      function panelToken() {
+        for (var i = 0; i < PANEL_TOKEN_KEYS.length; i++) {
+          var raw;
+          try {
+            raw = localStorage.getItem(PANEL_TOKEN_KEYS[i]);
+          } catch (e) {
+            return null;
+          }
+          if (!raw) continue;
+
+          // 裸字符串形式（Nova）
+          if (raw.charAt(0) !== '{') {
+            return raw;
+          }
+
+          try {
+            var parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed.value !== 'string' || !parsed.value) continue;
+            if (parsed.expire && parsed.expire < Date.now()) continue;
+            return parsed.value;
+          } catch (e) {
+            // 格式对不上（主题换了）就当没有
+          }
+        }
+        return null;
+      }
+
+      function token() {
+        var own = ownToken();
+        if (own) { usingPanelSession = false; return own; }
+
+        var panel = panelToken();
+        if (panel) { usingPanelSession = true; return panel; }
+
+        usingPanelSession = false;
+        return null;
       }
 
       function showError(el, message) {
@@ -203,6 +251,8 @@
       function showDevices() {
         loginCard.hidden = true;
         devicesCard.hidden = false;
+        // 蹭的是面板登录态时不提供“退出”——登出属于面板，这里不该替它做主
+        document.getElementById('logout').hidden = usingPanelSession;
         if (!refreshTimer) refreshTimer = setInterval(load, 60000);
       }
 
@@ -278,7 +328,7 @@
           headers: { 'Authorization': auth, 'Accept': 'application/json' }
         }).then(function (response) {
           if (response.status === 401 || response.status === 403) {
-            token(null);
+            ownToken(null);
             showLogin();
             showError(loginError, TEXT.sessionExpired);
             return null;
@@ -317,7 +367,7 @@
             showError(loginError, (result.body && result.body.message) || TEXT.genericError);
             return;
           }
-          token(result.body.data.auth_data);
+          ownToken(result.body.data.auth_data);
           document.getElementById('password').value = '';
           load();
         }).catch(function () {
@@ -331,7 +381,7 @@
       document.getElementById('refresh').addEventListener('click', load);
 
       document.getElementById('logout').addEventListener('click', function () {
-        token(null);
+        ownToken(null);
         showLogin();
       });
 

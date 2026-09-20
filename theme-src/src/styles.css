@@ -1,0 +1,15 @@
+html, body, #root { height: 100%; }
+body { margin: 0; }
+
+/* 订阅链接之类的长串，允许换行不撑破布局 */
+.break-all { word-break: break-all; }
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.auth-card { width: 100%; max-width: 380px; }

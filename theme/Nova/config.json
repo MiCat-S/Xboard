@@ -1,0 +1,33 @@
+{
+  "name": "Nova",
+  "description": "基于 Ant Design 的用户面板主题，源码在 theme-src/",
+  "version": "1.0.0",
+  "images": "",
+  "configs": [
+    {
+      "label": "主题色",
+      "placeholder": "请选择主题颜色",
+      "field_name": "theme_color",
+      "field_type": "select",
+      "select_options": {
+        "default": "默认(蓝色)",
+        "green": "绿色",
+        "purple": "紫色",
+        "black": "黑色"
+      },
+      "default_value": "default"
+    },
+    {
+      "label": "背景",
+      "placeholder": "请输入背景图片URL",
+      "field_name": "background_url",
+      "field_type": "input"
+    },
+    {
+      "label": "自定义页脚HTML",
+      "placeholder": "可以实现客服JS代码的加入等",
+      "field_name": "custom_html",
+      "field_type": "textarea"
+    }
+  ]
+}

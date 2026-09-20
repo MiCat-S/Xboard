@@ -129,15 +129,7 @@ class OrderController extends Controller
 
     private function applySorting(Request $request, Builder $builder): void
     {
-        if (!$request->has('sort')) {
-            return;
-        }
-
-        collect($request->input('sort'))->each(function ($sort) use ($builder) {
-            $field = $sort['id'];
-            $direction = $sort['desc'] ? 'DESC' : 'ASC';
-            $builder->orderBy($field, $direction);
-        });
+        $this->applySortParam($request, $builder);
     }
 
     public function paid(Request $request)

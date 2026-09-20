@@ -181,7 +181,7 @@ class GiftCardTemplate extends Model
         if ($this->type === self::TYPE_MYSTERY && isset($this->rewards['random_rewards'])) {
             $randomRewards = $this->rewards['random_rewards'];
             $totalWeight = array_sum(array_column($randomRewards, 'weight'));
-            $random = mt_rand(1, $totalWeight);
+            $random = random_int(1, max(1, (int) $totalWeight));
             $currentWeight = 0;
 
             foreach ($randomRewards as $reward) {

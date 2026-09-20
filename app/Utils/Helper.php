@@ -33,7 +33,7 @@ class Helper
 
     public static function generateOrderNo(): string
     {
-        $randomChar = mt_rand(10000, 99999);
+        $randomChar = random_int(10000, 99999);
         return date('YmdHms') . substr(microtime(), 2, 6) . $randomChar;
     }
 
@@ -64,12 +64,42 @@ class Helper
         }
 
         $charsLen = count($chars) - 1;
-        shuffle($chars);
         $str = '';
         for ($i = 0; $i < $len; $i++) {
-            $str .= $chars[mt_rand(0, $charsLen)];
+            // 必须使用 CSPRNG：邀请码、优惠券码、支付回调 uuid 都依赖这里的不可预测性
+            $str .= $chars[random_int(0, $charsLen)];
         }
         return $str;
+    }
+
+    /**
+     * 过滤登录跳转参数，只允许站内相对路径。
+     *
+     * 该值会被拼进邮件里的登录链接，未经校验时攻击者可以给任意已注册邮箱
+     * 触发一封指向外部域名的“登录邮件”，或注入额外的查询参数。
+     */
+    public static function sanitizeRedirect($redirect, string $default = 'dashboard'): string
+    {
+        if (!is_string($redirect)) {
+            return $default;
+        }
+
+        $redirect = trim($redirect);
+
+        if ($redirect === '' || strlen($redirect) > 255) {
+            return $default;
+        }
+
+        // 白名单字符集本身已排除 ':'、'\\' 与控制字符，可挡住绝对 URL 与协议相对 URL
+        if (!preg_match('#^[A-Za-z0-9_\-./?=&%]+$#', $redirect)) {
+            return $default;
+        }
+
+        if (str_starts_with($redirect, '/') || str_contains($redirect, '..')) {
+            return $default;
+        }
+
+        return $redirect;
     }
 
     public static function wrapIPv6($addr) {
@@ -80,15 +110,22 @@ class Helper
         }
     }
 
+    /**
+     * 兼容 v2board 迁移过来的历史口令算法。
+     * 这些算法本身已不安全（无盐 md5/sha256），保留只为不把老用户锁在门外，
+     * 用户下次改密或找回密码时会自动升级为 password_hash。
+     */
     public static function multiPasswordVerify($algo, $salt, $password, $hash)
     {
-        switch($algo) {
-            case 'md5': return md5($password) === $hash;
-            case 'sha256': return hash('sha256', $password) === $hash;
-            case 'md5salt': return md5($password . $salt) === $hash;
-            case 'sha256salt': return hash('sha256', $password . $salt) === $hash;
-            default: return password_verify($password, $hash);
-        }
+        $hash = (string) $hash;
+
+        return match ($algo) {
+            'md5' => hash_equals($hash, md5($password)),
+            'sha256' => hash_equals($hash, hash('sha256', $password)),
+            'md5salt' => hash_equals($hash, md5($password . $salt)),
+            'sha256salt' => hash_equals($hash, hash('sha256', $password . $salt)),
+            default => password_verify($password, $hash),
+        };
     }
 
     public static function emailSuffixVerify($email, $suffixs)
@@ -173,7 +210,7 @@ class Helper
                 if ($min > $max) {
                     list($min, $max) = [$max, $min];
                 }
-                $randomNumber = rand($min, $max);
+                $randomNumber = random_int($min, $max);
                 return $randomNumber;
             },
             '/\[uuid\]/' => function () {

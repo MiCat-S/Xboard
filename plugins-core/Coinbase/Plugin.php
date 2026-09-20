@@ -8,6 +8,13 @@ use App\Exceptions\ApiException;
 
 class Plugin extends AbstractPlugin implements PaymentInterface
 {
+    /**
+     * 只有已确认收款的事件才视为支付成功。
+     * Coinbase Commerce 还会推送 charge:created / charge:pending / charge:failed 等事件，
+     * 它们的签名同样合法，但不能据此开通订单。
+     */
+    private const PAID_EVENT_TYPES = ['charge:confirmed', 'charge:resolved'];
+
     public function boot(): void
     {
         $this->filter('available_payment_methods', function($methods) {
@@ -90,12 +97,29 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             throw new ApiException('HMAC signature does not match', 400);
         }
 
-        $out_trade_no = $json_param['event']['data']['metadata']['outTradeNo'];
-        $pay_trade_no = $json_param['event']['id'];
-        
+        if (!is_array($json_param)) {
+            throw new ApiException('Invalid webhook payload', 400);
+        }
+
+        $eventType = data_get($json_param, 'event.type');
+        if (!in_array($eventType, self::PAID_EVENT_TYPES, true)) {
+            return ['ignore' => true];
+        }
+
+        $out_trade_no = data_get($json_param, 'event.data.metadata.outTradeNo');
+        $pay_trade_no = data_get($json_param, 'event.id');
+
+        if (empty($out_trade_no)) {
+            throw new ApiException('Missing outTradeNo in webhook payload', 400);
+        }
+
+        // 下单时以 CNY 作为 local_price 提交，回调按同一币种比对
+        $localAmount = data_get($json_param, 'event.data.pricing.local.amount');
+
         return [
             'trade_no' => $out_trade_no,
-            'callback_no' => $pay_trade_no
+            'callback_no' => $pay_trade_no,
+            'paid_amount' => $localAmount === null ? null : (int) round(((float) $localAmount) * 100)
         ];
     }
 

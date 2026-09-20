@@ -98,10 +98,14 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
         $status = $params['status'];
         if ($status >= 100 || $status == 2) {
+            // amount1 为下单币种（amountf）下的收款金额
+            $amount1 = $params['amount1'] ?? null;
+
             return [
                 'trade_no' => $params['item_number'],
                 'callback_no' => $params['txn_id'],
-                'custom_result' => 'IPN OK'
+                'custom_result' => 'IPN OK',
+                'paid_amount' => $amount1 === null ? null : (int) round(((float) $amount1) * 100)
             ];
         } else if ($status < 0) {
             throw new ApiException('Payment Timed Out or Error');

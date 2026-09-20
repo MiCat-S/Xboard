@@ -33,8 +33,21 @@ class PluginManager
         return 'Plugin\\' . Str::studly($pluginCode);
     }
 
+    /**
+     * 插件 code 会参与拼接文件系统路径，必须与安装时的校验保持一致，
+     * 否则 ../ 之类的取值会让删除/读取操作逃出插件目录。
+     */
+    public static function isValidPluginCode(string $pluginCode): bool
+    {
+        return (bool) preg_match('/^[a-z0-9_]+$/', $pluginCode);
+    }
+
     public function resolvePluginPath(string $pluginCode): ?string
     {
+        if (!self::isValidPluginCode($pluginCode)) {
+            return null;
+        }
+
         $dirName = Str::studly($pluginCode);
         $corePath = $this->corePluginPath . '/' . $dirName;
         if (File::isDirectory($corePath)) {
@@ -50,16 +63,24 @@ class PluginManager
     public function getPluginPath(string $pluginCode): string
     {
         return $this->resolvePluginPath($pluginCode)
-            ?? $this->pluginPath . '/' . Str::studly($pluginCode);
+            ?? $this->getUserPluginPath($pluginCode);
     }
 
     public function getUserPluginPath(string $pluginCode): string
     {
+        if (!self::isValidPluginCode($pluginCode)) {
+            throw new \InvalidArgumentException('Invalid plugin code');
+        }
+
         return $this->pluginPath . '/' . Str::studly($pluginCode);
     }
 
     public function isCorePlugin(string $pluginCode): bool
     {
+        if (!self::isValidPluginCode($pluginCode)) {
+            return false;
+        }
+
         $dirName = Str::studly($pluginCode);
         return File::isDirectory($this->corePluginPath . '/' . $dirName);
     }
@@ -429,6 +450,10 @@ class PluginManager
      */
     public function delete(string $pluginCode): bool
     {
+        if (!self::isValidPluginCode($pluginCode)) {
+            throw new \Exception('插件标识不合法');
+        }
+
         if (Plugin::where('code', $pluginCode)->exists()) {
             $this->uninstall($pluginCode);
         }

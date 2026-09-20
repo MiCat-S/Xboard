@@ -13,15 +13,25 @@ class PassportRoute
             'prefix' => 'passport'
         ], function ($router) {
             // Auth
-            $router->post('/auth/register', [AuthController::class, 'register']);
-            $router->post('/auth/login', [AuthController::class, 'login']);
-            $router->get ('/auth/token2Login', [AuthController::class, 'token2Login']);
-            $router->post('/auth/forget', [AuthController::class, 'forget']);
-            $router->post('/auth/getQuickLoginUrl', [AuthController::class, 'getQuickLoginUrl']);
-            $router->post('/auth/loginWithMailLink', [AuthController::class, 'loginWithMailLink']);
+            // 这些都是未认证入口，按 IP 限流，防止撞库、邮件轰炸与验证码枚举。
+            // 业务层原有的按邮箱计数只挡得住单账号，挡不住换账号横扫。
+            $router->post('/auth/register', [AuthController::class, 'register'])
+                ->middleware('throttle:10,1');
+            $router->post('/auth/login', [AuthController::class, 'login'])
+                ->middleware('throttle:10,1');
+            $router->get('/auth/token2Login', [AuthController::class, 'token2Login'])
+                ->middleware('throttle:30,1');
+            $router->post('/auth/forget', [AuthController::class, 'forget'])
+                ->middleware('throttle:10,1');
+            $router->post('/auth/getQuickLoginUrl', [AuthController::class, 'getQuickLoginUrl'])
+                ->middleware('throttle:20,1');
+            $router->post('/auth/loginWithMailLink', [AuthController::class, 'loginWithMailLink'])
+                ->middleware('throttle:5,1');
             // Comm
-            $router->post('/comm/sendEmailVerify', [CommController::class, 'sendEmailVerify']);
-            $router->post('/comm/pv', [CommController::class, 'pv']);
+            $router->post('/comm/sendEmailVerify', [CommController::class, 'sendEmailVerify'])
+                ->middleware('throttle:5,1');
+            $router->post('/comm/pv', [CommController::class, 'pv'])
+                ->middleware('throttle:30,1');
         });
     }
 }

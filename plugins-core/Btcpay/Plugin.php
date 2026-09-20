@@ -92,6 +92,21 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             throw new ApiException('HMAC signature does not match', 400);
         }
 
+        if (!is_array($json_param)) {
+            throw new ApiException('Invalid webhook payload', 400);
+        }
+
+        // BTCPay 会推送 InvoiceCreated / InvoiceReceivedPayment / InvoiceExpired /
+        // InvoiceInvalid 等事件，签名同样合法，只有 InvoiceSettled 代表收款完成。
+        if (($json_param['type'] ?? null) !== 'InvoiceSettled') {
+            return ['ignore' => true];
+        }
+
+        $invoiceId = $json_param['invoiceId'] ?? null;
+        if (empty($invoiceId)) {
+            throw new ApiException('Missing invoiceId in webhook payload', 400);
+        }
+
         $context = stream_context_create(array(
             'http' => array(
                 'method' => 'GET',
@@ -99,15 +114,37 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             )
         ));
 
-        $invoiceDetail = file_get_contents($this->getConfig('btcpay_url') . 'api/v1/stores/' . $this->getConfig('btcpay_storeId') . '/invoices/' . $json_param['invoiceId'], false, $context);
-        $invoiceDetail = json_decode($invoiceDetail, true);
+        $invoiceRaw = @file_get_contents(
+            $this->getConfig('btcpay_url') . 'api/v1/stores/' . $this->getConfig('btcpay_storeId') . '/invoices/' . rawurlencode($invoiceId),
+            false,
+            $context
+        );
+        if ($invoiceRaw === false) {
+            throw new ApiException('Unable to fetch invoice detail from BTCPay', 400);
+        }
 
-        $out_trade_no = $invoiceDetail['metadata']["orderId"];
-        $pay_trade_no = $json_param['invoiceId'];
-        
+        $invoiceDetail = json_decode($invoiceRaw, true);
+        if (!is_array($invoiceDetail)) {
+            throw new ApiException('Invalid invoice detail from BTCPay', 400);
+        }
+
+        // 以服务端回查到的发票状态为准，不信任 webhook body
+        if (($invoiceDetail['status'] ?? null) !== 'Settled') {
+            return ['ignore' => true];
+        }
+
+        $out_trade_no = $invoiceDetail['metadata']['orderId'] ?? null;
+        if (empty($out_trade_no)) {
+            throw new ApiException('Missing orderId in invoice metadata', 400);
+        }
+
+        $pay_trade_no = $invoiceId;
+        $amount = $invoiceDetail['amount'] ?? null;
+
         return [
             'trade_no' => $out_trade_no,
-            'callback_no' => $pay_trade_no
+            'callback_no' => $pay_trade_no,
+            'paid_amount' => $amount === null ? null : (int) round(((float) $amount) * 100)
         ];
     }
 

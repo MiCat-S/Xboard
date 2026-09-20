@@ -52,18 +52,39 @@ if (!function_exists('admin_settings_batch')) {
 
 if (!function_exists('source_base_url')) {
     /**
-     * 获取来源基础URL，优先Referer，其次Host
+     * 获取来源基础URL，优先Referer，其次Host。
+     *
+     * 该结果会作为支付网关的 return_url，Referer 完全由客户端控制，
+     * 因此只在其主机名与站点自身域名一致时才采用，否则回落到请求域名 / app_url，
+     * 避免变成一个把用户带去外站的开放重定向。
+     *
      * @param string $path
      * @return string
      */
     function source_base_url(string $path = ''): string
     {
+        $path = ltrim($path, '/');
+        $requestBase = rtrim(request()->getSchemeAndHttpHost(), '/');
+        $appUrl = rtrim((string) admin_setting('app_url', ''), '/');
+
+        $allowedHosts = [];
+        foreach ([$appUrl, $requestBase] as $candidate) {
+            $host = $candidate === '' ? null : parse_url($candidate, PHP_URL_HOST);
+            if ($host) {
+                $allowedHosts[] = strtolower($host);
+            }
+        }
+
         $baseUrl = '';
         $referer = request()->header('Referer');
 
         if ($referer) {
             $parsedUrl = parse_url($referer);
-            if (isset($parsedUrl['scheme']) && isset($parsedUrl['host'])) {
+            if (
+                isset($parsedUrl['scheme'], $parsedUrl['host'])
+                && in_array(strtolower($parsedUrl['scheme']), ['http', 'https'], true)
+                && in_array(strtolower($parsedUrl['host']), $allowedHosts, true)
+            ) {
                 $baseUrl = $parsedUrl['scheme'] . '://' . $parsedUrl['host'];
                 if (isset($parsedUrl['port'])) {
                     $baseUrl .= ':' . $parsedUrl['port'];
@@ -72,11 +93,9 @@ if (!function_exists('source_base_url')) {
         }
 
         if (!$baseUrl) {
-            $baseUrl = request()->getSchemeAndHttpHost();
+            $baseUrl = $appUrl !== '' ? $appUrl : $requestBase;
         }
 
-        $baseUrl = rtrim($baseUrl, '/');
-        $path = ltrim($path, '/');
-        return $baseUrl . '/' . $path;
+        return rtrim($baseUrl, '/') . '/' . $path;
     }
 }

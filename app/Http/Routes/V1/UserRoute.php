@@ -61,10 +61,14 @@ class UserRoute
             // Server
             $router->get('/server/fetch', [ServerController::class, 'fetch']);
             // Coupon
-            $router->post('/coupon/check', [CouponController::class, 'check']);
+            // 兑换码/优惠券是可枚举的凭据，限制单账号的试码速率
+            $router->post('/coupon/check', [CouponController::class, 'check'])
+                ->middleware('throttle:20,1');
             // Gift Card
-            $router->post('/gift-card/check', [GiftCardController::class, 'check']);
-            $router->post('/gift-card/redeem', [GiftCardController::class, 'redeem']);
+            $router->post('/gift-card/check', [GiftCardController::class, 'check'])
+                ->middleware('throttle:20,1');
+            $router->post('/gift-card/redeem', [GiftCardController::class, 'redeem'])
+                ->middleware('throttle:20,1');
             $router->get('/gift-card/history', [GiftCardController::class, 'history']);
             $router->get('/gift-card/detail', [GiftCardController::class, 'detail']);
             $router->get('/gift-card/types', [GiftCardController::class, 'types']);

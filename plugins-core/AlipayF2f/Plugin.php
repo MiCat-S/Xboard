@@ -81,8 +81,14 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     public function notify($params): array|bool
     {
-        if ($params['trade_status'] !== 'TRADE_SUCCESS')
+        if (($params['trade_status'] ?? null) !== 'TRADE_SUCCESS')
             return false;
+
+        // 支付宝公钥对所有商户的通知都是同一把，必须核对 app_id，
+        // 否则任何一个支付宝商户的合法通知都能通过验签。
+        if (!hash_equals((string) $this->getConfig('app_id'), (string) ($params['app_id'] ?? ''))) {
+            return false;
+        }
 
         $gateway = new AlipayF2F();
         $gateway->setAppId($this->getConfig('app_id'));
@@ -91,9 +97,13 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
         try {
             if ($gateway->verify($params)) {
+                // 下单时以元为单位提交 total_amount，回调按同一单位比对
+                $totalAmount = $params['total_amount'] ?? null;
+
                 return [
                     'trade_no' => $params['out_trade_no'],
-                    'callback_no' => $params['trade_no']
+                    'callback_no' => $params['trade_no'],
+                    'paid_amount' => $totalAmount === null ? null : (int) round(((float) $totalAmount) * 100)
                 ];
             } else {
                 return false;

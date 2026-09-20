@@ -21,9 +21,13 @@ class UniProxyController extends Controller
         return $request->attributes->get('node_info');
     }
 
+    /** 大节点用户列表需要额外内存，但不能像原来那样直接解除上限：
+     *  Octane 常驻进程下 memory_limit=-1 会永久生效，一次异常就能把整台机器 OOM。 */
+    private const USER_LIST_MEMORY_LIMIT = '1024M';
+
     public function user(Request $request)
     {
-        ini_set('memory_limit', -1);
+        $this->raiseMemoryLimit(self::USER_LIST_MEMORY_LIMIT);
         $node = $this->getNodeInfo($request);
 
         ServerService::touchNode($node);
@@ -36,6 +40,35 @@ class UniProxyController extends Controller
         }
 
         return response($response)->header('ETag', "\"{$eTag}\"");
+    }
+
+    /**
+     * 只在当前上限低于目标值时上调，绝不降低运维已配置的更高上限
+     */
+    private function raiseMemoryLimit(string $target): void
+    {
+        $current = trim((string) ini_get('memory_limit'));
+
+        if ($current === '' || $current === '-1') {
+            return;
+        }
+
+        $toBytes = static function (string $value): int {
+            $value = trim($value);
+            $unit = strtolower(substr($value, -1));
+            $number = (int) $value;
+
+            return match ($unit) {
+                'g' => $number * 1024 * 1024 * 1024,
+                'm' => $number * 1024 * 1024,
+                'k' => $number * 1024,
+                default => $number,
+            };
+        };
+
+        if ($toBytes($current) < $toBytes($target)) {
+            ini_set('memory_limit', $target);
+        }
     }
 
     public function push(Request $request)

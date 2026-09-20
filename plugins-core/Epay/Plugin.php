@@ -84,13 +84,17 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         ksort($params);
         $str = stripslashes(urldecode(http_build_query($params))) . $this->getConfig('key');
 
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), (string) $sign)) {
             return false;
         }
 
+        // 下单时以元为单位提交 money，回调按同一单位比对
+        $money = $params['money'] ?? null;
+
         return [
             'trade_no' => $params['out_trade_no'],
-            'callback_no' => $params['trade_no']
+            'callback_no' => $params['trade_no'],
+            'paid_amount' => $money === null ? null : (int) round(((float) $money) * 100)
         ];
     }
 }

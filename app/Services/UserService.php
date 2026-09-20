@@ -164,9 +164,13 @@ class UserService
 
         // 基本信息
         $user->email = $data['email'];
-        $user->password = isset($data['password'])
-            ? Hash::make($data['password'])
-            : Hash::make($data['email']);
+        // 缺省密码绝不能等于邮箱：批量生成的账号邮箱是可枚举的，
+        // 等于把账号直接送给任何知道邮箱的人。调用方需要明文时自行生成并回显。
+        $user->password = Hash::make(
+            isset($data['password']) && $data['password'] !== ''
+                ? $data['password']
+                : Helper::randomChar(16)
+        );
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
 

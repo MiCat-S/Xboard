@@ -135,7 +135,7 @@ class PluginController extends Controller
     public function install(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         try {
@@ -156,7 +156,7 @@ class PluginController extends Controller
     public function uninstall(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         $code = $request->input('code');
@@ -185,7 +185,7 @@ class PluginController extends Controller
     public function upgrade(Request $request)
     {
         $request->validate([
-            'code' => 'required|string',
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/',
         ]);
         try {
             $this->pluginManager->update($request->input('code'));
@@ -205,7 +205,7 @@ class PluginController extends Controller
     public function enable(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         try {
@@ -226,7 +226,7 @@ class PluginController extends Controller
     public function disable(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         $this->pluginManager->disable($request->input('code'));
@@ -242,7 +242,7 @@ class PluginController extends Controller
     public function getConfig(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         try {
@@ -263,7 +263,7 @@ class PluginController extends Controller
     public function updateConfig(Request $request)
     {
         $request->validate([
-            'code' => 'required|string',
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/',
             'config' => 'required|array'
         ]);
 
@@ -320,7 +320,7 @@ class PluginController extends Controller
     public function delete(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|regex:/^[a-z0-9_]+$/'
         ]);
 
         $code = $request->input('code');

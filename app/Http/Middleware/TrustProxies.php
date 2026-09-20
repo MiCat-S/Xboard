@@ -38,9 +38,10 @@ class TrustProxies extends Middleware
      * 代理头映射
      * @var int
      */
+    // 不信任 X-Forwarded-Host：nginx 等反代默认会透传客户端自带的该头，
+    // 一旦信任，攻击者即可控制 url() 生成的站点域名（例如登录邮件里的链接）。
     protected $headers =
     Request::HEADER_X_FORWARDED_FOR |
-    Request::HEADER_X_FORWARDED_HOST |
     Request::HEADER_X_FORWARDED_PORT |
     Request::HEADER_X_FORWARDED_PROTO |
     Request::HEADER_X_FORWARDED_AWS_ELB;

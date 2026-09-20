@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use App\Helpers\ApiResponse;
 use App\Services\Plugin\InterceptResponseException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Arr;
 use Illuminate\View\ViewException;
 use Throwable;
@@ -60,6 +61,13 @@ class Handler extends ExceptionHandler
         if ($exception instanceof ViewException) {
             return $this->fail([500, '主题渲染失败。如更新主题，参数可能发生变化请重新配置主题后再试。']);
         }
+        // 限流：Laravel 抛出的是英文硬编码文案，这里转成统一的 API 结构与本地化文案，
+        // 前端的错误拦截器会直接把 message 弹出来。
+        if ($exception instanceof ThrottleRequestsException) {
+            return $this->fail([429, __('Too many requests, please try again later')])
+                ->withHeaders($exception->getHeaders());
+        }
+
         // ApiException主动抛出错误
         if ($exception instanceof ApiException) {
             $code = $exception->getCode();

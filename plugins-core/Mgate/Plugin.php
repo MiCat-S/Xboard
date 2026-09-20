@@ -112,13 +112,17 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         reset($params);
         $str = http_build_query($params) . $this->getConfig('mgate_app_secret');
 
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), (string) $sign)) {
             return false;
         }
 
+        // 下单时以分为单位提交 total_amount，回调按同一单位比对
+        $totalAmount = $params['total_amount'] ?? null;
+
         return [
             'trade_no' => $params['out_trade_no'],
-            'callback_no' => $params['trade_no']
+            'callback_no' => $params['trade_no'],
+            'paid_amount' => $totalAmount === null ? null : (int) $totalAmount
         ];
     }
 }

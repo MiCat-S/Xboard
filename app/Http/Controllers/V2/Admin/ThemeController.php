@@ -90,7 +90,7 @@ class ThemeController extends Controller
     public function delete(Request $request)
     {
         $payload = $request->validate([
-            'name' => 'required'
+            'name' => 'required|string|regex:/^[A-Za-z0-9_-]+$/'
         ]);
         $this->themeService->delete($payload['name']);
         return $this->success(true);
@@ -116,7 +116,7 @@ class ThemeController extends Controller
     public function switchTheme(Request $request)
     {
         $payload = $request->validate([
-            'name' => 'required'
+            'name' => 'required|string|regex:/^[A-Za-z0-9_-]+$/'
         ]);
         $this->themeService->switch($payload['name']);
         return $this->success(true);
@@ -128,7 +128,7 @@ class ThemeController extends Controller
     public function getThemeConfig(Request $request)
     {
         $payload = $request->validate([
-            'name' => 'required'
+            'name' => 'required|string|regex:/^[A-Za-z0-9_-]+$/'
         ]);
         $data = $this->themeService->getConfig($payload['name']);
         return $this->success($data);
@@ -140,7 +140,7 @@ class ThemeController extends Controller
     public function saveThemeConfig(Request $request)
     {
         $payload = $request->validate([
-            'name' => 'required',
+            'name' => 'required|string|regex:/^[A-Za-z0-9_-]+$/',
             'config' => 'required'
         ]);
         $this->themeService->updateConfig($payload['name'], $payload['config']);

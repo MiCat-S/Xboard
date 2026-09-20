@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use ReCaptcha\ReCaptcha;
 
 class CaptchaService
@@ -43,14 +44,20 @@ class CaptchaService
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
-        $response = Http::post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-            'secret' => admin_setting('turnstile_secret_key'),
-            'response' => $turnstileToken,
-            'remoteip' => $request->ip()
-        ]);
+        try {
+            $response = Http::timeout(10)->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                'secret' => admin_setting('turnstile_secret_key'),
+                'response' => $turnstileToken,
+                'remoteip' => $request->ip()
+            ]);
+        } catch (\Throwable $e) {
+            // 校验服务不可达时必须判定为失败，不能放行
+            Log::warning('Turnstile verification request failed: ' . $e->getMessage());
+            return [false, [400, __('Invalid code is incorrect')]];
+        }
 
         $result = $response->json();
-        if (!$result['success']) {
+        if (!is_array($result) || empty($result['success'])) {
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
@@ -77,9 +84,9 @@ class CaptchaService
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
-        // 检查分数阈值（如果有的话）
-        $score = $recaptchaResp->getScore();
-        $threshold = admin_setting('recaptcha_v3_score_threshold', 0.5);
+        // 检查分数阈值。缺少分数时按 0 分处理（转型即可），不能默认放行。
+        $score = (float) $recaptchaResp->getScore();
+        $threshold = (float) admin_setting('recaptcha_v3_score_threshold', 0.5);
         if ($score < $threshold) {
             return [false, [400, __('Invalid code is incorrect')]];
         }

@@ -171,9 +171,10 @@ class GiftCardCode extends Model
      */
     public static function generateCode(string $prefix = 'GC'): string
     {
+        $safePrefix = (string) $prefix;
         do {
-            $safePrefix = (string) $prefix;
-            $code = $safePrefix . strtoupper(substr(md5(uniqid($safePrefix . mt_rand(), true)), 0, 12));
+            // uniqid()/mt_rand() 可被预测，兑换码等同于钱，必须用 CSPRNG
+            $code = $safePrefix . strtoupper(bin2hex(random_bytes(6)));
         } while (self::where('code', $code)->exists());
 
         return $code;

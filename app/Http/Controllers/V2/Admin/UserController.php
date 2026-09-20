@@ -132,15 +132,7 @@ class UserController extends Controller
     // Apply sorting rules to the query builder.
     private function applySorting(Request $request, Builder|QueryBuilder $builder): void
     {
-        if (!$request->has('sort')) {
-            return;
-        }
-
-        collect($request->input('sort'))->each(function ($sort) use ($builder) {
-            $field = $sort['id'];
-            $direction = $sort['desc'] ? 'DESC' : 'ASC';
-            $builder->orderBy($field, $direction);
-        });
+        $this->applySortParam($request, $builder);
     }
 
     // Resolve bulk operation scope and normalize user_ids.
@@ -389,8 +381,41 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * 管理员未指定密码时，为每个账号生成独立的随机密码。
+     * 旧实现用邮箱当密码，而 prefix_1@、prefix_2@ 这类邮箱是可枚举的，
+     * 等于任何人都能登录这批账号。明文只在本次响应/CSV 中回显一次。
+     */
+    private function resolveGeneratedPassword(Request $request): string
+    {
+        $password = $request->input('password');
+
+        return is_string($password) && $password !== '' ? $password : Helper::randomChar(16);
+    }
+
+    /**
+     * 未指定密码时会生成随机密码，而随机密码只在 CSV 里回传得到。
+     * 现有后台界面不展示接口返回的密码字段，所以这种组合会创建出
+     * 一批谁都不知道密码的账号——直接拦下来，让管理员二选一。
+     */
+    private function ensureGeneratedPasswordIsRecoverable(Request $request): ?\Illuminate\Http\JsonResponse
+    {
+        $password = $request->input('password');
+        $hasPassword = is_string($password) && $password !== '';
+
+        if ($hasPassword || $request->boolean('download_csv')) {
+            return null;
+        }
+
+        return $this->fail([422, '未填写密码时会为每个账号生成随机密码，请填写密码，或勾选“导出 CSV”以获取生成的密码']);
+    }
+
     public function generate(UserGenerate $request)
     {
+        if ($guard = $this->ensureGeneratedPasswordIsRecoverable($request)) {
+            return $guard;
+        }
+
         if ($request->input('email_prefix')) {
             // If generate_count is specified with email_prefix, generate multiple users with incremented emails
             if ($request->input('generate_count')) {
@@ -405,9 +430,10 @@ class UserController extends Controller
             }
 
             $userService = app(UserService::class);
+            $password = $this->resolveGeneratedPassword($request);
             $user = $userService->createUser([
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $password,
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ]);
@@ -415,7 +441,12 @@ class UserController extends Controller
             if (!$user->save()) {
                 return $this->fail([500, '生成失败']);
             }
-            return $this->success(true);
+
+            // 随机密码只在这里回显一次，不返回就等于账号不可用
+            return $this->success([
+                'email' => $user->email,
+                'password' => $password,
+            ]);
         }
 
         if ($request->input('generate_count')) {
@@ -428,11 +459,13 @@ class UserController extends Controller
         $userService = app(UserService::class);
         $usersData = [];
 
+        $passwords = [];
         for ($i = 0; $i < $request->input('generate_count'); $i++) {
             $email = Helper::randomChar(6) . '@' . $request->input('email_suffix');
+            $passwords[$email] = $this->resolveGeneratedPassword($request);
             $usersData[] = [
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $passwords[$email],
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ];
@@ -460,14 +493,14 @@ class UserController extends Controller
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="users.csv"',
             ];
-            $callback = function () use ($users, $request) {
+            $callback = function () use ($users, $passwords) {
                 $handle = fopen('php://output', 'w');
                 fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
                 foreach ($users as $user) {
                     $user = $user->refresh();
                     $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
                     $createDate = date('Y-m-d H:i:s', $user['created_at']);
-                    $password = $request->input('password') ?? $user['email'];
+                    $password = $passwords[$user['email']] ?? '';
                     $subscribeUrl = Helper::getSubscribeUrl($user['token']);
                     fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
                 }
@@ -477,10 +510,10 @@ class UserController extends Controller
         }
 
         // 默认返回 JSON
-        $data = collect($users)->map(function ($user) use ($request) {
+        $data = collect($users)->map(function ($user) use ($passwords) {
             return [
                 'email' => $user['email'],
-                'password' => $request->input('password') ?? $user['email'],
+                'password' => $passwords[$user['email']] ?? '',
                 'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
                 'uuid' => $user['uuid'],
                 'created_at' => date('Y-m-d H:i:s', $user['created_at']),
@@ -511,11 +544,13 @@ class UserController extends Controller
         }
 
         // Generate user data for batch creation
+        $passwords = [];
         for ($i = 1; $i <= $generateCount; $i++) {
             $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
+            $passwords[$email] = $this->resolveGeneratedPassword($request);
             $usersData[] = [
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $passwords[$email],
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ];
@@ -541,14 +576,14 @@ class UserController extends Controller
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="users.csv"',
             ];
-            $callback = function () use ($users, $request) {
+            $callback = function () use ($users, $passwords) {
                 $handle = fopen('php://output', 'w');
                 fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
                 foreach ($users as $user) {
                     $user = $user->refresh();
                     $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
                     $createDate = date('Y-m-d H:i:s', $user['created_at']);
-                    $password = $request->input('password') ?? $user['email'];
+                    $password = $passwords[$user['email']] ?? '';
                     $subscribeUrl = Helper::getSubscribeUrl($user['token']);
                     fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
                 }
@@ -558,10 +593,10 @@ class UserController extends Controller
         }
 
         // 默认返回 JSON
-        $data = collect($users)->map(function ($user) use ($request) {
+        $data = collect($users)->map(function ($user) use ($passwords) {
             return [
                 'email' => $user['email'],
-                'password' => $request->input('password') ?? $user['email'],
+                'password' => $passwords[$user['email']] ?? '',
                 'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
                 'uuid' => $user['uuid'],
                 'created_at' => date('Y-m-d H:i:s', $user['created_at']),
@@ -589,7 +624,10 @@ class UserController extends Controller
         }
 
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
-        $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
+        // sort 直接来自请求，先确认它确实是 v2_user 的真实列名再用于 orderBy
+        $sort = $this->isSortableColumn(User::query(), $request->input('sort'))
+            ? $request->input('sort')
+            : 'created_at';
 
         $builder = User::query()
             ->with('plan:id,name')
@@ -659,7 +697,10 @@ class UserController extends Controller
         }
 
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
-        $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
+        // sort 直接来自请求，先确认它确实是 v2_user 的真实列名再用于 orderBy
+        $sort = $this->isSortableColumn(User::query(), $request->input('sort'))
+            ? $request->input('sort')
+            : 'created_at';
 
         $builder = User::query()->orderBy('id', 'desc');
 

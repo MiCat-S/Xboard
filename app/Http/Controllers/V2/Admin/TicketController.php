@@ -26,13 +26,7 @@ class TicketController extends Controller
             });
         }
 
-        if ($request->has('sort')) {
-            collect($request->input('sort'))->each(function ($sort) use ($builder) {
-                $key = $sort['id'];
-                $value = $sort['desc'] ? 'DESC' : 'ASC';
-                $builder->orderBy($key, $value);
-            });
-        }
+        $this->applySortParam($request, $builder);
     }
     public function fetch(Request $request)
     {

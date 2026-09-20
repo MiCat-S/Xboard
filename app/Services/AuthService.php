@@ -54,13 +54,45 @@ class AuthService
 
     public static function findUserByBearerToken(string $bearerToken): ?User
     {
-        $token = str_replace('Bearer ', '', $bearerToken);
-        
+        $token = trim(str_replace('Bearer ', '', $bearerToken));
+
+        if ($token === '') {
+            return null;
+        }
+
         $accessToken = PersonalAccessToken::findToken($token);
-        
-        $tokenable = $accessToken?->tokenable;
-        
-        return $tokenable instanceof User ? $tokenable : null;
+
+        // PersonalAccessToken::findToken() 只按哈希查找，过期判断在 Sanctum 的 Guard 里，
+        // 这里必须自己补上，否则已过期的 token 依旧能换取新会话。
+        if (!$accessToken || !self::isValidAccessToken($accessToken)) {
+            return null;
+        }
+
+        $tokenable = $accessToken->tokenable;
+
+        if (!$tokenable instanceof User || $tokenable->banned) {
+            return null;
+        }
+
+        return $tokenable;
+    }
+
+    /**
+     * 与 Laravel\Sanctum\Guard 保持一致的 token 有效期判断
+     */
+    private static function isValidAccessToken(PersonalAccessToken $accessToken): bool
+    {
+        if ($accessToken->expires_at && $accessToken->expires_at->isPast()) {
+            return false;
+        }
+
+        $expiration = config('sanctum.expiration');
+
+        if ($expiration && $accessToken->created_at?->lte(now()->subMinutes($expiration))) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

@@ -11,6 +11,7 @@ use App\Services\Auth\LoginService;
 use App\Services\Auth\MailLinkService;
 use App\Services\Auth\RegisterService;
 use App\Services\AuthService;
+use App\Utils\Helper;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -91,7 +92,8 @@ class AuthController extends Controller
     {
         // 处理直接通过token重定向
         if ($token = $request->input('token')) {
-            $redirect = '/#/login?verify=' . $token . '&redirect=' . ($request->input('redirect', 'dashboard'));
+            $redirect = '/#/login?verify=' . rawurlencode((string) $token)
+                . '&redirect=' . rawurlencode(Helper::sanitizeRedirect($request->input('redirect')));
 
             return redirect()->to(
                 admin_setting('app_url')

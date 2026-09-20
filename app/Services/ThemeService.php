@@ -16,6 +16,8 @@ class ThemeService
     private const CONFIG_FILE = 'config.json';
     private const SETTING_PREFIX = 'theme_';
     private const SYSTEM_THEMES = ['Xboard', 'v2board'];
+    /** 主题名会直接参与拼接文件路径，必须限制为不含分隔符的安全字符 */
+    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
 
     public function __construct()
     {
@@ -133,6 +135,10 @@ class ThemeService
                 throw new Exception('Theme name not configured');
             }
 
+            if (!self::isValidThemeName((string) $config['name'])) {
+                throw new Exception('Theme name may only contain letters, digits, underscores and hyphens');
+            }
+
             if (in_array($config['name'], self::SYSTEM_THEMES)) {
                 throw new Exception('Cannot upload theme with same name as system theme');
             }
@@ -190,6 +196,10 @@ class ThemeService
             return true;
         }
 
+        if (!self::isValidThemeName($theme)) {
+            throw new Exception('Invalid theme name');
+        }
+
         $currentTheme = admin_setting('current_theme');
 
         try {
@@ -226,6 +236,10 @@ class ThemeService
     public function delete(string $theme): bool
     {
         try {
+            if (!self::isValidThemeName($theme)) {
+                throw new Exception('Invalid theme name');
+            }
+
             if (in_array($theme, self::SYSTEM_THEMES)) {
                 throw new Exception('System theme cannot be deleted');
             }
@@ -258,11 +272,20 @@ class ThemeService
         return $this->getThemePath($theme) !== null;
     }
 
+    public static function isValidThemeName(string $theme): bool
+    {
+        return (bool) preg_match(self::NAME_PATTERN, $theme);
+    }
+
     /**
      * Get theme path
      */
     public function getThemePath(string $theme): ?string
     {
+        if (!self::isValidThemeName($theme)) {
+            return null;
+        }
+
         $systemPath = base_path(self::SYSTEM_THEME_DIR . $theme);
         if (File::exists($systemPath)) {
             return $systemPath;
@@ -340,6 +363,11 @@ class ThemeService
      */
     public function cleanupThemeFiles(string $theme): void
     {
+        if (!self::isValidThemeName($theme)) {
+            Log::warning('Refused to cleanup theme files for invalid theme name', ['theme' => $theme]);
+            return;
+        }
+
         try {
             $publicThemePath = public_path('theme/' . $theme);
             if (File::exists($publicThemePath)) {

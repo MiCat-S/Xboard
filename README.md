@@ -2,8 +2,9 @@
 
 <div align="center">
 
-[![Telegram](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
-![PHP](https://img.shields.io/badge/PHP-8.2+-green.svg)
+[![Tests](https://github.com/MiCat-S/Xboard/actions/workflows/tests.yml/badge.svg)](https://github.com/MiCat-S/Xboard/actions/workflows/tests.yml)
+![PHP](https://img.shields.io/badge/PHP-8.2%20|%208.4-green.svg)
+![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-5.7+-blue.svg)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -11,20 +12,30 @@
 
 ## 📖 Introduction
 
-Xboard is a modern panel system built on Laravel 11, focusing on providing a clean and efficient user experience.
+Xboard is a modern panel system built on Laravel 12 + Octane, focusing on providing a clean and efficient user experience.
+
+**This repository is a fork of [cedar2025/Xboard](https://github.com/cedar2025/Xboard).** It does not track upstream.
+What it adds on top:
+
+- A security audit pass over payment callbacks, token handling, randomness and settings caching
+- **Nova** — a user panel theme shipped **with its source** (upstream only distributes a built bundle)
+- A test suite and CI that actually gate merges
+
+See [Divergence from upstream](#-divergence-from-upstream) for the details.
 
 ## ✨ Features
 
-- 🚀 Built with Laravel 12 + Octane for significant performance gains
-- 🎨 Redesigned admin interface (React + Shadcn UI)
-- 📱 Modern user frontend (Vue3 + TypeScript)
-- 🐳 Ready-to-use Docker deployment solution
+- 🚀 Laravel 12 + Octane for significant performance gains
+- 🎨 Admin interface built with React + Shadcn UI
+- 📱 **Nova** user theme — React + Vite + TypeScript + Ant Design, source in [`theme-src/`](./theme-src)
+- 🐳 Ready-to-use Docker deployment
+- ✅ 92 backend tests (PHPUnit) + 106 frontend tests (Vitest), PHPStan level 5 at zero errors
 - 🎯 Optimized system architecture for better maintainability
 
 ## 🚀 Quick Start
 
 ```bash
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard && \
+git clone -b compose --depth 1 https://github.com/MiCat-S/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
@@ -34,8 +45,69 @@ docker compose run -it --rm \
 docker compose up -d
 ```
 
-> After installation, visit: http://SERVER_IP:7001  
+> After installation, visit: http://SERVER_IP:7001
 > ⚠️ Make sure to save the admin credentials shown during installation
+
+A container image is published to `ghcr.io/micat-s/xboard` on every push to `master`.
+
+## 🔐 Security notes
+
+**`APP_KEY` must be unique per installation.** When `secure_path` is not set explicitly, the admin
+path falls back to `hash('crc32b', config('app.key'))` — so any site sharing a known `APP_KEY` has a
+guessable admin path, on top of forgeable signed URLs and decryptable cookies. `.env.example` ships
+with an **empty** `APP_KEY`; `php artisan xboard:install` generates one. If you deployed from an
+older `.env.example` that had a value baked in, rotate it. Nothing in this codebase encrypts stored
+columns with `APP_KEY`, so rotating only invalidates existing sessions and cookies — user API tokens
+are unaffected.
+
+Dependencies are kept clear of published advisories (`composer audit`). `composer.json` pins
+`config.platform.php` to `8.2`, the lowest supported version, so `composer update` on a newer
+runtime cannot silently produce a lockfile that will not install in production.
+
+## 🧑‍💻 Development
+
+### Backend
+
+```bash
+composer install
+vendor/bin/phpunit                 # 92 tests
+vendor/bin/phpstan analyse         # level 5, expected to stay at zero errors
+composer audit                     # expected to stay clean
+```
+
+Tests run against SQLite and need no MySQL. Some device-state tests need Redis; they are skipped
+when it is unavailable.
+
+### Nova theme
+
+The theme's source lives in [`theme-src/`](./theme-src) and builds into `theme/Nova/assets/`.
+
+```bash
+cd theme-src
+pnpm install
+pnpm dev                           # dev server
+pnpm test                          # 106 tests
+pnpm typecheck
+pnpm build                         # writes theme/Nova/assets/
+```
+
+**The built bundle is committed to the repository.** If you change the source, run `pnpm build` and
+commit the result — CI fails the build if `theme/Nova/assets/` does not match what the current
+source produces.
+
+Stack constraints for this theme: React + Vite + TypeScript + Ant Design only. Prefer `antd`
+components and `@ant-design/icons`, follow the antd version the project actually installs, and
+theme through `ConfigProvider` + design tokens. No other component library.
+
+### CI
+
+[`.github/workflows/tests.yml`](./.github/workflows/tests.yml) runs on every push and pull request:
+
+| Job | What it checks |
+| --- | --- |
+| Backend (PHP 8.2 / 8.4) | PHPUnit against a Redis service container, plus PHPStan |
+| Frontend | `pnpm typecheck`, Vitest, and `antd lint` against the installed antd version |
+| Theme build | `pnpm build`, then fails if the committed bundle drifted from the source |
 
 ## 📖 Documentation
 
@@ -58,49 +130,61 @@ docker compose up -d
 
 ## 🛠️ Tech Stack
 
-- Backend: Laravel 11 + Octane
-- Admin Panel: React + Shadcn UI + TailwindCSS
-- User Frontend: Vue3 + TypeScript + NaiveUI
+- Backend: Laravel 12 + Octane (PHP 8.2+)
+- Admin Panel: React + Shadcn UI + TailwindCSS ([dist submodule](https://github.com/MiCat-S/xboard-admin-dist))
+- User Themes:
+  - **Nova** — React + Vite + TypeScript + Ant Design, source included
+  - **Xboard** — the legacy theme, distributed as a built bundle only
 - Deployment: Docker + Docker Compose
 - Caching: Redis + Octane Cache
 
+## 🔀 Divergence from upstream
+
+This fork does not sync with `cedar2025/Xboard`. The substantive differences:
+
+- **Payment callbacks** — amounts are verified centrally before an order is marked paid; gateway
+  plugins gate on event type and status, compare signatures with `hash_equals`, and a callback for
+  an unknown order now reports failure instead of acknowledging it as success.
+- **Auth** — bearer tokens are checked for expiry and for a banned owner.
+- **Randomness** — verification codes, order numbers and generated secrets use a CSPRNG.
+- **Settings cache** — a Redis failure falls back to the database instead of an empty array, which
+  previously re-opened registration and disabled the captcha on a cache blip.
+- **Sorting** — `sort` parameters are validated against the real schema rather than interpolated.
+- **Nova theme** — a user panel with source, replacing a dist-only bundle.
+- **Tests and CI** — see above. PHPStan runs at level 5 with no baseline.
+
+The admin dist submodule points at [`MiCat-S/xboard-admin-dist`](https://github.com/MiCat-S/xboard-admin-dist),
+a fork carrying a copy fix. Run `git submodule sync && git submodule update --init` after pulling.
+
 ## 📷 Preview
+
 ![Admin Preview](./docs/images/admin.png)
 
 ![User Preview](./docs/images/user.png)
+
+> The user screenshot above shows the legacy `Xboard` theme. Nova is selected from the admin panel's
+> theme settings.
 
 ## ⚠️ Disclaimer
 
 This project is for learning and communication purposes only. Users are responsible for any consequences of using this project.
 
-## ❤️ Support The Project
-
-If this project has helped you, donations are appreciated. They help support ongoing maintenance and would make me very happy.
-
-TRC20: `TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB`
-
-## 🌟 Maintenance Notice
-
-This project is currently under light maintenance. We will:
-- Fix critical bugs and security issues
-- Review and merge important pull requests
-- Provide necessary updates for compatibility
-
-However, new feature development may be limited.
-
 ## 🔔 Important Notes
 
-1. Restart required after modifying admin path:
+1. Restart after changing the admin path:
 ```bash
 docker compose restart
 ```
 
-2. For aaPanel installations, restart the Octane daemon process
+2. For aaPanel installations, restart the Octane daemon process.
 
-## 🤝 Contributing
+3. **Octane keeps workers alive across requests.** Any deployment must restart them, or the old code
+   keeps serving.
 
-Issues and Pull Requests are welcome to help improve the project.
+## ❤️ Upstream
 
-## 📈 Star History
+Xboard is originally by [cedar2025](https://github.com/cedar2025/Xboard) and is MIT licensed.
+Upstream is under light maintenance: critical bugs and security issues get fixed, important pull
+requests get reviewed, but new feature development is limited.
 
-[![Stargazers over time](https://starchart.cc/cedar2025/Xboard.svg)](https://starchart.cc/cedar2025/Xboard)
+If the upstream project has helped you, the author accepts donations at `TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB` (TRC20).

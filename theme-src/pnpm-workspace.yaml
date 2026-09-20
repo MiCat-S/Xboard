@@ -1,2 +1,7 @@
+# esbuild 的安装脚本需要显式放行，否则 pnpm 装完直接报错退出。
+# 这个设置在 pnpm 10 和 11 里键名不同，两个都写上，本地和 CI 就都不会卡。
+onlyBuiltDependencies:
+  - esbuild
+
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true

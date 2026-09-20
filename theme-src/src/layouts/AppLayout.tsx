@@ -7,6 +7,8 @@ import {
   FileTextOutlined,
   CustomerServiceOutlined,
   GiftOutlined,
+  BookOutlined,
+  SendOutlined,
   DesktopOutlined,
   BarChartOutlined,
   UserOutlined,
@@ -31,8 +33,10 @@ const NAV = [
   { key: '/nodes', icon: <CloudServerOutlined />, labelKey: 'navNodes' as const },
   { key: '/devices', icon: <DesktopOutlined />, labelKey: 'navDevices' as const },
   { key: '/traffic', icon: <BarChartOutlined />, labelKey: 'navTraffic' as const },
+  { key: '/knowledge', icon: <BookOutlined />, labelKey: 'navKnowledge' as const },
   { key: '/tickets', icon: <CustomerServiceOutlined />, labelKey: 'navTickets' as const },
   { key: '/invite', icon: <GiftOutlined />, labelKey: 'navInvite' as const },
+  { key: '/telegram', icon: <SendOutlined />, labelKey: 'navTelegram' as const },
   { key: '/account', icon: <UserOutlined />, labelKey: 'navAccount' as const },
 ]
 

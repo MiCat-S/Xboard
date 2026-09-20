@@ -33,3 +33,51 @@ body {
   max-width: 100%;
   height: auto;
 }
+
+/* 知识库正文同样是后台富文本 */
+.knowledge-body {
+  line-height: 1.75;
+}
+
+.knowledge-body :is(p, ul, ol, pre, blockquote) {
+  margin: 0 0 0.75em;
+}
+
+.knowledge-body ul,
+.knowledge-body ol {
+  padding-inline-start: 1.5em;
+}
+
+.knowledge-body :is(img, video) {
+  max-width: 100%;
+  height: auto;
+}
+
+.knowledge-body pre {
+  overflow-x: auto;
+  padding: 0.75em;
+  border-radius: 6px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.knowledge-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.knowledge-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.knowledge-body :is(th, td) {
+  padding: 0.4em 0.6em;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+}
+
+/* 后端在无有效订阅时会把受限区域替换成这个类 */
+.v2board-no-access {
+  padding: 0.75em;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.15);
+}

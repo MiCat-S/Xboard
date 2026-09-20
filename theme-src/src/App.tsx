@@ -13,6 +13,8 @@ import Devices from './pages/Devices'
 import Traffic from './pages/Traffic'
 import Tickets from './pages/Tickets'
 import Invite from './pages/Invite'
+import Knowledge from './pages/Knowledge'
+import Telegram from './pages/Telegram'
 import Account from './pages/Account'
 
 /**
@@ -36,6 +38,8 @@ export default function App() {
             <Route path="/traffic" element={<Traffic />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/invite" element={<Invite />} />
+            <Route path="/knowledge" element={<Knowledge />} />
+            <Route path="/telegram" element={<Telegram />} />
             <Route path="/account" element={<Account />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

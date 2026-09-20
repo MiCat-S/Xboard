@@ -34,6 +34,33 @@ class KnowledgeController extends Controller
             : $this->fetchList($request);
     }
 
+    /**
+     * 分类列表。
+     *
+     * 路由 /user/knowledge/getCategory 一直指向这个方法，但用户端控制器里
+     * 原本没有实现（只有后台那份有），调用会直接抛异常。
+     * 这里补上，并且比后台那版更严：只统计 show=1 且匹配语言的文章。
+     */
+    public function getCategory(Request $request)
+    {
+        $request->validate([
+            'language' => 'nullable|sometimes|string|max:10',
+        ]);
+
+        $categories = $this->buildKnowledgeQuery(['category'])
+            ->when(
+                $request->filled('language'),
+                fn($query) => $query->where('language', $request->input('language'))
+            )
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->filter()
+            ->values();
+
+        return $this->success($categories);
+    }
+
     private function fetchSingle(Request $request)
     {
         $knowledge = $this->buildKnowledgeQuery()

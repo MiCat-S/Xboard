@@ -27,6 +27,7 @@ export interface UserInfo {
   balance: number
   commission_balance: number
   plan_id: number | null
+  telegram_id: number | string | null
   uuid: string
   avatar_url: string
 }
@@ -224,6 +225,22 @@ export interface UserConfig {
   currency_symbol: string
 }
 
+export interface KnowledgeItem {
+  id: number
+  category: string
+  title: string
+  /** 只有单篇详情才带 body */
+  body?: string
+  updated_at: number
+}
+
+/** 列表按分类分组返回 */
+export type KnowledgeGroups = Record<string, KnowledgeItem[]>
+
+export interface BotInfo {
+  username: string
+}
+
 export const api = {
   guestConfig: () => get<GuestConfig>('/guest/comm/config'),
 
@@ -287,4 +304,11 @@ export const api = {
   /** 这个接口返回的是顶层 {data, total}，没有外层 data 包装 */
   commissionLogs: (current: number, page_size: number) =>
     getRaw<{ data: CommissionLog[]; total: number }>('/user/invite/details', { current, page_size }),
+
+  /** language 必须传：后端是严格相等匹配，不传会按 language=null 过滤，结果恒为空 */
+  knowledge: (language: string, keyword?: string) =>
+    get<KnowledgeGroups>('/user/knowledge/fetch', keyword ? { language, keyword } : { language }),
+  knowledgeArticle: (id: number) => get<KnowledgeItem>('/user/knowledge/fetch', { id }),
+
+  botInfo: () => get<BotInfo>('/user/telegram/getBotInfo'),
 }

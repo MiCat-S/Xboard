@@ -46,12 +46,14 @@ php artisan view:clear
 | 订单详情/支付 | `#/order/:tradeNo` | `user/order/detail`、`user/order/getPaymentMethod`、`user/order/checkout`、`user/order/check` |
 | 我的工单 | `#/tickets` | `user/ticket/fetch`、`user/ticket/save`、`user/ticket/reply`、`user/ticket/close` |
 | 邀请返利 | `#/invite` | `user/invite/fetch`、`user/invite/save`、`user/invite/details`、`user/ticket/withdraw`、`user/comm/config` |
+| 使用文档 | `#/knowledge` | `user/knowledge/fetch` |
+| Telegram | `#/telegram` | `user/telegram/getBotInfo`、`user/comm/config`、`user/info` |
 
 ## 还没做
 
-知识库（`user/knowledge/*`）、Telegram 绑定、通知公告。按现有的
-`src/api/index.ts` 加方法、`src/pages/` 加页面、`src/layouts/AppLayout.tsx`
-的 `NAV` 加一项即可。
+通知公告（`user/notice/fetch`）、会话管理（`user/getActiveSession` /
+`removeActiveSession`）。按现有的 `src/api/index.ts` 加方法、`src/pages/`
+加页面、`src/layouts/AppLayout.tsx` 的 `NAV` 加一项即可。
 
 ## 几个容易踩的点
 
@@ -83,3 +85,10 @@ php artisan view:clear
   在有未结工单时都会被拒，错误文案是「存在未关闭的工单」，前端如实透出即可。
 - `invite/fetch` 的 `stat` 是定长数组
   `[已注册人数, 已确认佣金, 确认中佣金, 佣金比例%, 可用佣金]`，金额单位是分。
+- **知识库列表的 `language` 必须传**。后端是 `where('language', $request->input('language'))`
+  严格相等，不传就按 `language = null` 过滤，结果恒为空。这里跟随界面语言，
+  所以后台文章的语言标记要和 `zh-CN` / `en-US` 对得上。
+- **Telegram 绑定不在面板里完成**，是给机器人发 `/bind <订阅链接>`（解绑发 `/unbind`）。
+  面板只展示机器人账号、命令和当前绑定状态（`user/info` 的 `telegram_id`）。
+  另外 `getBotInfo` 在机器人未配置时会抛原始 cURL/TLS 错误，所以要先用
+  `user/comm/config` 的 `is_telegram` 做门控，别把底层错误甩给用户。

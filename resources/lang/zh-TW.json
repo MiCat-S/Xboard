@@ -146,5 +146,22 @@
     "traffic_reset.reset_success": "流量重置成功",
     "traffic_reset.reset_failed": "流量重置失敗，請查看日誌獲取詳細信息",
     "traffic_reset.user_cannot_reset": "該用戶當前不能重置流量（用戶未激活或無有效套餐）",
-    "Too many requests, please try again later": "請求過於頻繁，請稍後再試"
+    "Too many requests, please try again later": "請求過於頻繁，請稍後再試",
+    "Online Devices": "線上裝置",
+    "These are the source IPs your nodes have seen in the last few minutes. An address you do not recognise may mean your subscription link has been shared or stolen.": "這些是節點在最近幾分鐘內看到的連線來源 IP。出現你不認識的位址，可能意味著訂閱連結被分享或被盜用。",
+    "Device records expire a few minutes after a connection stops, so this list only reflects recent activity. If you see an address that is not yours, reset your subscription link from the panel.": "連線中斷幾分鐘後記錄就會過期，所以這裡只反映近期活動。若看到不屬於你的位址，請到面板重設訂閱連結。",
+    "Email": "信箱",
+    "Password": "密碼",
+    "Sign in": "登入",
+    "Sign out": "登出",
+    "Signing in...": "登入中…",
+    "Refresh": "重新整理",
+    "Loading...": "載入中…",
+    "No active connections right now.": "目前沒有活動連線。",
+    "This device": "本機",
+    "Unknown location": "歸屬地未知",
+    "Unknown node": "未知節點",
+    "In use: :count": "已用 :count 台",
+    "Limit: :limit": "上限 :limit",
+    "Last seen :time": "最後活動 :time"
 }

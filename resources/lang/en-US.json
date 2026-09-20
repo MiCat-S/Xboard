@@ -146,5 +146,22 @@
     "traffic_reset.reset_success": "Traffic reset successful",
     "traffic_reset.reset_failed": "Traffic reset failed, please check logs for details",
     "traffic_reset.user_cannot_reset": "User cannot reset traffic (user not activated or no valid plan)",
-    "Too many requests, please try again later": "Too many requests, please try again later"
+    "Too many requests, please try again later": "Too many requests, please try again later",
+    "Online Devices": "Online Devices",
+    "These are the source IPs your nodes have seen in the last few minutes. An address you do not recognise may mean your subscription link has been shared or stolen.": "These are the source IPs your nodes have seen in the last few minutes. An address you do not recognise may mean your subscription link has been shared or stolen.",
+    "Device records expire a few minutes after a connection stops, so this list only reflects recent activity. If you see an address that is not yours, reset your subscription link from the panel.": "Device records expire a few minutes after a connection stops, so this list only reflects recent activity. If you see an address that is not yours, reset your subscription link from the panel.",
+    "Email": "Email",
+    "Password": "Password",
+    "Sign in": "Sign in",
+    "Sign out": "Sign out",
+    "Signing in...": "Signing in...",
+    "Refresh": "Refresh",
+    "Loading...": "Loading...",
+    "No active connections right now.": "No active connections right now.",
+    "This device": "This device",
+    "Unknown location": "Unknown location",
+    "Unknown node": "Unknown node",
+    "In use: :count": "In use: :count",
+    "Limit: :limit": "Limit: :limit",
+    "Last seen :time": "Last seen :time"
 }

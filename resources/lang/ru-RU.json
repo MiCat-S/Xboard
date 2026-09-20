@@ -146,5 +146,22 @@
     "traffic_reset.reset_success": "Трафик успешно сброшен",
     "traffic_reset.reset_failed": "Ошибка сброса трафика, подробности в логах",
     "traffic_reset.user_cannot_reset": "Пользователь не может сбросить трафик (аккаунт не активен или нет действующего тарифа)",
-    "Too many requests, please try again later": "Слишком много запросов, повторите попытку позже"
+    "Too many requests, please try again later": "Слишком много запросов, повторите попытку позже",
+    "Online Devices": "Активные устройства",
+    "These are the source IPs your nodes have seen in the last few minutes. An address you do not recognise may mean your subscription link has been shared or stolen.": "Это IP-адреса подключений, которые узлы видели за последние несколько минут. Незнакомый адрес может означать, что вашей ссылкой на подписку пользуется кто-то ещё.",
+    "Device records expire a few minutes after a connection stops, so this list only reflects recent activity. If you see an address that is not yours, reset your subscription link from the panel.": "Записи об устройствах истекают через несколько минут после разрыва соединения, поэтому список отражает только недавнюю активность. Если вы видите чужой адрес, сбросьте ссылку на подписку в панели.",
+    "Email": "Email",
+    "Password": "Пароль",
+    "Sign in": "Войти",
+    "Sign out": "Выйти",
+    "Signing in...": "Вход…",
+    "Refresh": "Обновить",
+    "Loading...": "Загрузка…",
+    "No active connections right now.": "Сейчас активных подключений нет.",
+    "This device": "Это устройство",
+    "Unknown location": "Местоположение неизвестно",
+    "Unknown node": "Неизвестный узел",
+    "In use: :count": "Используется: :count",
+    "Limit: :limit": "Лимит: :limit",
+    "Last seen :time": "Последний раз: :time"
 }

@@ -144,7 +144,7 @@ class General extends AbstractProtocol
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $config['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $config['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $config['extra'] = is_array($extra) ? json_encode($extra) : null;
                 break;
             default:
                 break;
@@ -233,7 +233,7 @@ class General extends AbstractProtocol
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $config['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $config['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $config['extra'] = is_array($extra) ? json_encode($extra) : null;
                 break;
         }
 
@@ -308,7 +308,7 @@ class General extends AbstractProtocol
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $array['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $array['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $array['extra'] = is_array($extra) ? json_encode($extra) : null;
                 break;
             default:
                 break;

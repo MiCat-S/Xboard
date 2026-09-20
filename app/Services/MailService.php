@@ -22,7 +22,7 @@ class MailService
         }
 
         return (string) preg_replace_callback('/\{\{\s*([a-zA-Z0-9_.-]+)(?:\|([^}]*))?\s*\}\}/', function ($m) use ($vars) {
-            $key = $m[1] ?? '';
+            $key = $m[1];
             $default = array_key_exists(2, $m) ? trim((string) $m[2]) : null;
 
             if (!array_key_exists($key, $vars) || $vars[$key] === null || $vars[$key] === '') {

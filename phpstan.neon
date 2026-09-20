@@ -1,10 +1,6 @@
 includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
-    # 仓库里既有的 30 处告警。放基线里不是当它们不存在，是让 CI 只对
-    # 新引入的问题变红——否则一个从第一天就红的检查等于没有检查。
-    # 修掉一处就从这里删一处。
-    - phpstan-baseline.neon
 
 parameters:
 
@@ -13,6 +9,12 @@ parameters:
 
     # Level 10 is the highest level
     level: 5
+
+    # Workerman 的 ConnectionInterface 标了 #[AllowDynamicProperties]，
+    # 连接对象上挂业务字段（nodeId、machineId 等）是它自己的用法。
+    # 这里只是把这个事实告诉 PHPStan，不是压制某条告警。
+    universalObjectCratesClasses:
+        - Workerman\Connection\TcpConnection
 
     ignoreErrors:
         - '#Negated boolean expression is always false\.#'

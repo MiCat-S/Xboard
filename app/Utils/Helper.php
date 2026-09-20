@@ -181,8 +181,8 @@ class Helper
 
     public static function randomPort($range): int {
         $portRange = explode('-', (string) $range, 2);
-        $min = (int) ($portRange[0] ?? 0);
-        $max = (int) ($portRange[1] ?? $portRange[0] ?? 0);
+        $min = (int) $portRange[0];
+        $max = (int) ($portRange[1] ?? $portRange[0]);
         if ($min > $max) {
             [$min, $max] = [$max, $min];
         }

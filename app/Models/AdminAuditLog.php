@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdminAuditLog extends Model
 {
@@ -14,7 +15,7 @@ class AdminAuditLog extends Model
         'updated_at' => 'timestamp',
     ];
 
-    public function admin()
+    public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
     }

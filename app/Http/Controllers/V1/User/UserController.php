@@ -78,6 +78,9 @@ class UserController extends Controller
             return $this->fail([400, __('Save failed')]);
         }
         
+        // Sanctum 把返回值标成非空，实际上没有 token 时是 null，
+        // 所以这里的判空不能省——null 时该把全部 token 都清掉。
+        /** @var \Laravel\Sanctum\PersonalAccessToken|null $currentToken */
         $currentToken = $user->currentAccessToken();
         if ($currentToken) {
             $user->tokens()->where('id', '!=', $currentToken->id)->delete();

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $message
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
- * @property-read \App\Models\Ticket $ticket 关联的工单
+ * @property-read \App\Models\Ticket|null $ticket 关联的工单（工单被删时为 null）
  * @property-read bool $is_from_user 消息是否由工单发起人发送
  * @property-read bool $is_from_admin 消息是否由管理员发送
  */

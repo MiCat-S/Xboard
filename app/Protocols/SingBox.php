@@ -129,7 +129,7 @@ class SingBox extends AbstractProtocol
     {
         $jsonData = subscribe_template('singbox');
 
-        return is_array($jsonData) ? $jsonData : json_decode($jsonData, true);
+        return json_decode((string) $jsonData, true);
     }
 
     protected function buildOutbounds()

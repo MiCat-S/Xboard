@@ -117,7 +117,6 @@ class AppController extends Controller
         ];
         $config['config_hash'] = md5(json_encode($config)); // 配置哈希值(用于校验)
 
-        $config = $config ?? [];
         return response()->json(['data' => $config]);
     }
 

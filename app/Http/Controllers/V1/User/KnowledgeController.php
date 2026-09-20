@@ -168,7 +168,8 @@ class KnowledgeController extends Controller
     {
         foreach ($rules as $rule) {
             if ($rule['type'] === 'regex') {
-                $body = preg_replace($rule['pattern'], $rule['replacement'], $body);
+                // preg_replace 失败返回 null，别把 $body 打成 null
+                $body = preg_replace($rule['pattern'], $rule['replacement'], $body) ?? $body;
             } else {
                 $body = str_replace($rule['search'], $rule['replacement'], $body);
             }

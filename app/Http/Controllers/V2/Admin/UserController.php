@@ -657,7 +657,7 @@ class UserController extends Controller
                     'user.id' => $user->id,
                     'user.email' => $user->email,
                     'user.uuid' => $user->uuid,
-                    'user.plan_name' => $user->plan?->name ?? '',
+                    'user.plan_name' => $user->plan->name ?? '',
                     'user.expired_at' => $user->expired_at ? date('Y-m-d H:i:s', $user->expired_at) : '',
                     'user.transfer_enable' => (int) ($user->transfer_enable ?? 0),
                     'user.transfer_used' => (int) (($user->u ?? 0) + ($user->d ?? 0)),

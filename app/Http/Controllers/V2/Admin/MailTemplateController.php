@@ -46,8 +46,8 @@ class MailTemplateController extends Controller
             'required_vars' => $meta['required_vars'],
             'optional_vars' => $meta['optional_vars'],
             'customized' => $db !== null,
-            'subject' => $db?->subject ?? $this->getDefaultSubject($name),
-            'content' => $db?->content ?? $this->getDefaultContent($name),
+            'subject' => $db->subject ?? $this->getDefaultSubject($name),
+            'content' => $db->content ?? $this->getDefaultContent($name),
         ]);
     }
 

@@ -259,7 +259,7 @@ class MailService
         if (is_array($vars) && !empty($vars)) {
             $subject = self::renderPlaceholders((string) $subject, $vars);
 
-            if (is_array($templateValue) && isset($templateValue['content']) && is_string($templateValue['content'])) {
+            if (isset($templateValue['content']) && is_string($templateValue['content'])) {
                 $templateValue['content'] = self::renderPlaceholders($templateValue['content'], $vars);
             }
         }

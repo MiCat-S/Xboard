@@ -61,7 +61,7 @@ class HookManager
             return spl_object_hash($callback);
         }
 
-        if (is_array($callback) && count($callback) === 2) {
+        if (is_array($callback)) {
             [$class, $method] = $callback;
 
             if (is_object($class)) {

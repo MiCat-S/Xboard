@@ -157,7 +157,8 @@ class PlanService
             throw new ApiException(__('This subscription cannot be renewed, please change to another subscription'));
         }
 
-        if (!$this->plan->show && $this->plan->renew && !app(UserService::class)->isAvailable($user)) {
+        // 走到这里 !show 已经蕴含 renew —— 上面第一条判断把「不展示且不可续费」拦掉了
+        if (!$this->plan->show && !app(UserService::class)->isAvailable($user)) {
             throw new ApiException(__('This subscription has expired, please change to another subscription'));
         }
     }

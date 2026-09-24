@@ -29,7 +29,7 @@ See [Divergence from upstream](#-divergence-from-upstream) for the details.
 - 🎨 Admin interface built with React + Shadcn UI
 - 📱 **Nova** user theme — React + Vite + TypeScript + Ant Design, source in [`theme-src/`](./theme-src)
 - 🐳 Ready-to-use Docker deployment
-- ✅ 92 backend tests (PHPUnit) + 106 frontend tests (Vitest), PHPStan level 5 at zero errors
+- ✅ PHPUnit + Vitest suites gating CI, PHPStan level 5 at zero errors
 - 🎯 Optimized system architecture for better maintainability
 
 ## 🚀 Quick Start
@@ -64,13 +64,52 @@ Dependencies are kept clear of published advisories (`composer audit`). `compose
 `config.platform.php` to `8.2`, the lowest supported version, so `composer update` on a newer
 runtime cannot silently produce a lockfile that will not install in production.
 
+## 🌍 Subscription access log & region rules
+
+Every subscription fetch is recorded per `(user, IP)`: country, request count, blocked count,
+first/last seen and the client's User-Agent. Records not seen for 90 days are pruned daily.
+
+```bash
+php artisan subscribe:log                 # where each account's subscription is fetched from
+php artisan subscribe:log --blocked       # only fetches rejected by the region rule
+```
+
+An account fetched from more than one country is flagged in the output — that is the usual sign
+of a shared subscription.
+
+**Region rule.** Admin panel → *Plugins* → **订阅地区限制** (`plugins-core/SubscribeGeo`).
+Modes: no restriction / only allow listed countries / block listed countries. HK, MO and TW are
+separate codes and are not covered by `CN`. A blocked fetch gets an empty 403. An address whose
+country cannot be determined is always allowed — refusing it would cut a legitimate user off
+entirely. The plugin ships disabled; installed-but-disabled means no restriction.
+`php artisan subscribe:geo` reads and writes the same plugin config from the command line.
+
+**Country lookup**, first match wins:
+
+1. Cloudflare's `CF-IPCountry` header (the site is behind Cloudflare and `TrustProxies` covers its ranges)
+2. A MaxMind-format `.mmdb` at `storage/geoip/GeoLite2-Country.mmdb` (IPv4 + IPv6)
+3. The bundled `ip2region` database (IPv4 only, unreliable outside mainland China)
+
+```bash
+php artisan geoip:update                  # download / refresh the .mmdb (runs monthly on the 3rd)
+php artisan geoip:lookup 1.2.3.4 ::1      # which source says what, per address
+```
+
+`geoip:update` fetches [DB-IP](https://db-ip.com)'s free *IP to Country Lite* database by default.
+A new file only replaces the old one after it parses, reports a country database type and resolves
+known addresses correctly; any failure keeps the existing file. Pass `--url` to use another
+MaxMind-format source (e.g. GeoLite2 with your own licence key).
+
+> IP geolocation by [DB-IP](https://db-ip.com), licensed under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## 🧑‍💻 Development
 
 ### Backend
 
 ```bash
 composer install
-vendor/bin/phpunit                 # 92 tests
+vendor/bin/phpunit
 vendor/bin/phpstan analyse         # level 5, expected to stay at zero errors
 composer audit                     # expected to stay clean
 ```
@@ -86,7 +125,7 @@ The theme's source lives in [`theme-src/`](./theme-src) and builds into `theme/N
 cd theme-src
 pnpm install
 pnpm dev                           # dev server
-pnpm test                          # 106 tests
+pnpm test
 pnpm typecheck
 pnpm build                         # writes theme/Nova/assets/
 ```

@@ -40,6 +40,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('reset:log')->daily()->onOneServer();
         // 订阅拉取记录：只保留 90 天内还出现过的来源
         $schedule->command('subscribe:log', ['--prune=90'])->daily()->onOneServer();
+        // 归属地库：DB-IP 每月 1 号前后发布，3 号再拉，避开发布当天
+        $schedule->command('geoip:update')->monthlyOn(3, '04:30')->onOneServer()->withoutOverlapping(30);
         // send
         $schedule->command('send:remindMail', ['--force'])->dailyAt('11:30')->onOneServer();
         // horizon metrics

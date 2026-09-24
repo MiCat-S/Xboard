@@ -1,0 +1,30 @@
+{
+    "name": "订阅地区限制",
+    "code": "subscribe_geo",
+    "version": "1.0.0",
+    "description": "按访问者所在国家放行或拦截订阅拉取。拉取记录无论是否启用都会照常写入。",
+    "author": "MiCat-S",
+    "require": {
+        "xboard": ">=1.0.0"
+    },
+    "config": {
+        "mode": {
+            "type": "select",
+            "default": "off",
+            "label": "限制方式",
+            "description": "被拦下的拉取会返回 403，客户端只会显示更新失败。归属地查不出来的地址一律放行，避免误伤。",
+            "options": [
+                { "label": "不限制（只记录）", "value": "off" },
+                { "label": "只允许名单内的国家", "value": "allow" },
+                { "label": "拦截名单内的国家", "value": "deny" }
+            ]
+        },
+        "countries": {
+            "type": "string",
+            "default": "CN",
+            "label": "国家名单",
+            "placeholder": "CN 或 CN,HK",
+            "description": "两位国家码，多个用英文逗号分隔。港澳台是独立的代码（HK / MO / TW），不包含在 CN 里。名单为空时视为不限制。"
+        }
+    }
+}

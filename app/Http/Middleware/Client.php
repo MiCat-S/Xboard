@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Exceptions\ApiException;
 use App\Services\GeoIpService;
-use App\Services\SubscribeAccessService;
+use App\Services\Plugin\HookManager;
 use App\Services\SubscribeLogService;
 use Closure;
 use App\Models\User;
@@ -59,7 +59,10 @@ class Client
         // TrustProxies 已经配了 Cloudflare 全段，所以这里拿到的是真实客户端 IP
         $ip = $request->ip();
         $geo = app(GeoIpService::class)->resolve($ip, $request);
-        $allowed = app(SubscribeAccessService::class)->isAllowed($geo['country']);
+
+        // 地区规则由「订阅地区限制」插件挂在这个钩子上。插件没启用时没人处理，
+        // 拿到的就是默认值 true，也就是不限制。
+        $allowed = HookManager::filter('client.subscribe.geo_allowed', true, $geo['country'], $request) !== false;
 
         app(SubscribeLogService::class)->record(
             $user->id,

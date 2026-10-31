@@ -114,8 +114,10 @@ vendor/bin/phpstan analyse         # level 5, expected to stay at zero errors
 composer audit                     # expected to stay clean
 ```
 
-Tests run against SQLite and need no MySQL. Some device-state tests need Redis; they are skipped
-when it is unavailable.
+Tests run against SQLite by default. The password-recovery collation regressions require MySQL
+and run in a dedicated CI job with `utf8mb4_unicode_ci`; they are skipped on SQLite because it
+does not reproduce accent-insensitive email matching. Some device-state tests need Redis and
+are skipped when it is unavailable.
 
 ### Nova theme
 

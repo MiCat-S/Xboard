@@ -157,7 +157,7 @@ class PasswordRecoveryTest extends TestCase
             'email' => $email,
             'password' => password_hash('old-password', PASSWORD_DEFAULT),
             'uuid' => Helper::guid(true),
-            'token' => Helper::guid(true),
+            'token' => Helper::guid(),
         ]);
     }
 

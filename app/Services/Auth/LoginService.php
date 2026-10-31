@@ -100,7 +100,9 @@ class LoginService
 
         // 验证邮箱验证码
         $cachedEmailCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
-        if ($cachedEmailCode === null || !hash_equals((string) $cachedEmailCode, $emailCode)) {
+        // 不接受升级前未绑定收件人的验证码，也不能仅凭缓存键认定邮箱相同。
+        if (!is_array($cachedEmailCode) || $cachedEmailCode['email'] !== $email
+            || !hash_equals((string) $cachedEmailCode['code'], $emailCode)) {
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
             return [false, [400, __('Incorrect email verification code')]];
         }

@@ -62,7 +62,10 @@ class CommController extends Controller
             ]
         ]);
 
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $email), $code, 300);
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $email), [
+            'email' => $email,
+            'code' => $code,
+        ], 300);
         Cache::put(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email), time(), 60);
         return $this->success(true);
     }

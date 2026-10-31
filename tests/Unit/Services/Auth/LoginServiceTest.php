@@ -41,7 +41,10 @@ class LoginServiceTest extends TestCase
     public function test_reset_password_accepts_matching_cached_email_code(): void
     {
         $user = $this->createUser('user@example.com', 'old-password');
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $user->email), 123456, 300);
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $user->email), [
+            'email' => $user->email,
+            'code' => 123456,
+        ], 300);
 
         [$success, $result] = $this->service->resetPassword($user->email, '123456', 'new-password');
 
@@ -51,6 +54,34 @@ class LoginServiceTest extends TestCase
         $user->refresh();
         $this->assertTrue(password_verify('new-password', $user->password));
         $this->assertNull(Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $user->email)));
+    }
+
+    public function test_reset_password_rejects_legacy_codes_without_a_recipient(): void
+    {
+        $user = $this->createUser('victim@example.com', 'old-password');
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $user->email), 123456, 300);
+
+        [$success, $result] = $this->service->resetPassword($user->email, '123456', 'new-password');
+
+        $this->assertFalse($success);
+        $this->assertSame(400, $result[0]);
+        $this->assertTrue(password_verify('old-password', $user->fresh()->password));
+    }
+
+    public function test_reset_password_rejects_a_code_bound_to_another_recipient(): void
+    {
+        $user = $this->createUser('victim@example.com', 'old-password');
+        // 模拟重音不敏感的缓存键比较返回了另一个邮箱的验证码记录。
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $user->email), [
+            'email' => 'victim@éxample.com',
+            'code' => 123456,
+        ], 300);
+
+        [$success, $result] = $this->service->resetPassword($user->email, '123456', 'new-password');
+
+        $this->assertFalse($success);
+        $this->assertSame(400, $result[0]);
+        $this->assertTrue(password_verify('old-password', $user->fresh()->password));
     }
 
     public function test_forget_password_validation_rejects_boolean_email_code(): void

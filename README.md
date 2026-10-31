@@ -119,6 +119,9 @@ and run in a dedicated CI job with `utf8mb4_unicode_ci`; they are skipped on SQL
 does not reproduce accent-insensitive email matching. Some device-state tests need Redis and
 are skipped when it is unavailable.
 
+Email verification codes are bound to their actual recipient. When upgrading from versions
+that stored bare verification codes, users must request a new code. No database migration is required.
+
 ### Nova theme
 
 The theme's source lives in [`theme-src/`](./theme-src) and builds into `theme/Nova/assets/`.

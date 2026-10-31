@@ -88,7 +88,8 @@ class RegisterService
             }
 
             $cachedEmailCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email')));
-            if ($cachedEmailCode === null || !hash_equals((string) $cachedEmailCode, (string) $emailCode)) {
+            if (!is_array($cachedEmailCode) || $cachedEmailCode['email'] !== $request->input('email')
+                || !hash_equals((string) $cachedEmailCode['code'], (string) $emailCode)) {
                 return [false, [400, __('Incorrect email verification code')]];
             }
         }

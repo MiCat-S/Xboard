@@ -65,7 +65,8 @@ class PasswordRecoveryTest extends TestCase
             'email' => 'ADMIN@EXAMPLE.COM',
         ])->assertOk();
 
-        $code = $this->cachedCodeFor($user->email);
+        $code = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $user->email));
+        $this->assertNotNull($code);
         $this->assertCodeSentTo($user->email, $code);
 
         $this->postJson("/api/{$version}/passport/auth/forget", [
@@ -86,7 +87,8 @@ class PasswordRecoveryTest extends TestCase
             'email' => $email,
         ])->assertOk();
 
-        $code = $this->cachedCodeFor($email);
+        $code = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+        $this->assertNotNull($code);
         $this->assertCodeSentTo($email, $code);
 
         $this->postJson("/api/{$version}/passport/auth/register", [
@@ -111,7 +113,8 @@ class PasswordRecoveryTest extends TestCase
             'email' => $requestEmail,
         ])->assertOk();
 
-        $code = $this->cachedCodeFor($user->email);
+        $code = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $user->email));
+        $this->assertNotNull($code);
         $this->assertCodeSentTo($user->email, $code);
         $this->assertNull(Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $requestEmail)));
     }
@@ -123,10 +126,8 @@ class PasswordRecoveryTest extends TestCase
         string $requestEmail
     ): void {
         $user = $this->createCollidingUser($storedEmail, $requestEmail);
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $requestEmail), [
-            'email' => $requestEmail,
-            'code' => 123456,
-        ], 300);
+        // 模拟升级前已发出的验证码，或在账号注册前发给另一个邮箱的验证码。
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $requestEmail), 123456, 300);
 
         $this->postJson("/api/{$version}/passport/auth/forget", [
             'email' => $requestEmail,
@@ -138,26 +139,28 @@ class PasswordRecoveryTest extends TestCase
     }
 
     #[DataProvider('apiVersions')]
-    public function test_database_cache_key_collision_cannot_reuse_another_mailbox_code(string $version): void
+    public function test_database_cache_does_not_accept_another_mailbox_code(string $version): void
     {
         $user = $this->createCollidingUser('admin@example.com', 'admin@éxample.com');
         $driver = Cache::getDefaultDriver();
-        // 临时表不提交当前测试事务，并使用项目的重音不敏感 MySQL 排序规则。
         DB::statement('CREATE TEMPORARY TABLE cache (`key` VARCHAR(255) PRIMARY KEY, `value` MEDIUMTEXT NOT NULL,
             expiration INT NOT NULL) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
 
         try {
             Cache::setDefaultDriver('database');
-            foreach ([123456, ['email' => 'admin@éxample.com', 'code' => 123456]] as $record) {
-                Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'admin@éxample.com'), $record, 300);
-                $this->assertSame($record, Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $user->email)));
+            Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'admin@éxample.com'), 123456, 300);
+            $accountKey = CacheKey::get('EMAIL_VERIFY_CODE', $user->email);
 
-                $this->postJson("/api/{$version}/passport/auth/forget", [
-                    'email' => 'admin@éxample.com',
-                    'email_code' => '123456',
-                    'password' => 'attacker-password',
-                ])->assertStatus(400)->assertJsonPath('status', 'fail');
-            }
+            // SQL 会匹配到该行，但 Laravel DatabaseStore 还会复核原始键，不会返回另一邮箱的验证码。
+            $this->assertSame(1, DB::table('cache')->where('key', config('cache.prefix') . $accountKey)->count());
+            $this->assertNull(Cache::get($accountKey));
+            $this->assertSame(123456, Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', 'admin@éxample.com')));
+
+            $this->postJson("/api/{$version}/passport/auth/forget", [
+                'email' => 'admin@éxample.com',
+                'email_code' => '123456',
+                'password' => 'attacker-password',
+            ])->assertStatus(400)->assertJsonPath('status', 'fail');
 
             $this->assertTrue(password_verify('old-password', $user->fresh()->password));
         } finally {
@@ -197,14 +200,5 @@ class PasswordRecoveryTest extends TestCase
             return $params['email'] === $email && $params['template_value']['code'] === $code;
         });
         Queue::assertPushed(SendEmailJob::class, 1);
-    }
-
-    private function cachedCodeFor(string $email): int
-    {
-        $record = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
-        $this->assertIsArray($record);
-        $this->assertSame($email, $record['email']);
-
-        return $record['code'];
     }
 }

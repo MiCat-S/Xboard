@@ -55,10 +55,7 @@ class RegisterServiceTest extends TestCase
 
     public function test_validate_register_accepts_matching_cached_email_code(): void
     {
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'user@example.com'), [
-            'email' => 'user@example.com',
-            'code' => 123456,
-        ], 300);
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'user@example.com'), 123456, 300);
 
         [$success, $result] = $this->service->validateRegister($this->makeRequest([
             'email_code' => '123456',
@@ -66,33 +63,6 @@ class RegisterServiceTest extends TestCase
 
         $this->assertTrue($success);
         $this->assertNull($result);
-    }
-
-    public function test_validate_register_rejects_legacy_codes_without_a_recipient(): void
-    {
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'user@example.com'), 123456, 300);
-
-        [$success, $result] = $this->service->validateRegister($this->makeRequest([
-            'email_code' => '123456',
-        ]));
-
-        $this->assertFalse($success);
-        $this->assertSame(400, $result[0]);
-    }
-
-    public function test_validate_register_rejects_a_code_bound_to_another_recipient(): void
-    {
-        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'user@example.com'), [
-            'email' => 'user@éxample.com',
-            'code' => 123456,
-        ], 300);
-
-        [$success, $result] = $this->service->validateRegister($this->makeRequest([
-            'email_code' => '123456',
-        ]));
-
-        $this->assertFalse($success);
-        $this->assertSame(400, $result[0]);
     }
 
     private function makeRequest(array $overrides = []): Request

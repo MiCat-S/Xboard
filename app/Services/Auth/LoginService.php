@@ -85,6 +85,12 @@ class LoginService
      */
     public function resetPassword(string $email, string $emailCode, string $password): array
     {
+        $user = User::byEmail($email)->first();
+        if ($user) {
+            // 与发码使用同一个已保存邮箱，不能接受数据库仅因排序规则匹配到的另一邮箱的验证码。
+            $email = $user->email;
+        }
+
         // 检查重置请求限制
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $email);
         $forgetRequestLimit = (int) Cache::get($forgetRequestLimitKey);
@@ -99,8 +105,6 @@ class LoginService
             return [false, [400, __('Incorrect email verification code')]];
         }
 
-        // 查找用户
-        $user = User::byEmail($email)->first();
         if (!$user) {
             return [false, [400, __('This email is not registered in the system')]];
         }

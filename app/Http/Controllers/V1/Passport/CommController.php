@@ -18,7 +18,7 @@ class CommController extends Controller
 
     public function sendEmailVerify(CommSendEmailVerify $request)
     {
-                // 验证人机验证码
+        // 验证人机验证码
         $captchaService = app(CaptchaService::class);
         [$captchaValid, $captchaError] = $captchaService->verify($request);
         if (!$captchaValid) {
@@ -26,11 +26,15 @@ class CommController extends Controller
         }
 
         $email = $request->input('email');
+        $user = User::byEmail($email)->first();
+        if ($user) {
+            // 数据库排序规则可能将不同邮箱视为相同，已有账号的验证码只能发往其保存的邮箱。
+            $email = $user->email;
+        }
 
         // 检查白名单后缀限制
         if ((int) admin_setting('email_whitelist_enable', 0)) {
-            $isRegisteredEmail = User::byEmail($email)->exists();
-            if (!$isRegisteredEmail) {
+            if (!$user) {
                 $allowedSuffixes = Helper::getEmailSuffix();
                 $emailSuffix = substr(strrchr($email, '@'), 1);
 

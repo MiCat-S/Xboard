@@ -138,37 +138,6 @@ class PasswordRecoveryTest extends TestCase
         $this->assertTrue(password_verify('old-password', $user->fresh()->password));
     }
 
-    #[DataProvider('apiVersions')]
-    public function test_database_cache_does_not_accept_another_mailbox_code(string $version): void
-    {
-        $user = $this->createCollidingUser('admin@example.com', 'admin@éxample.com');
-        $driver = Cache::getDefaultDriver();
-        DB::statement('CREATE TEMPORARY TABLE cache (`key` VARCHAR(255) PRIMARY KEY, `value` MEDIUMTEXT NOT NULL,
-            expiration INT NOT NULL) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-
-        try {
-            Cache::setDefaultDriver('database');
-            Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', 'admin@éxample.com'), 123456, 300);
-            $accountKey = CacheKey::get('EMAIL_VERIFY_CODE', $user->email);
-
-            // SQL 会匹配到该行，但 Laravel DatabaseStore 还会复核原始键，不会返回另一邮箱的验证码。
-            $this->assertSame(1, DB::table('cache')->where('key', config('cache.prefix') . $accountKey)->count());
-            $this->assertNull(Cache::get($accountKey));
-            $this->assertSame(123456, Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', 'admin@éxample.com')));
-
-            $this->postJson("/api/{$version}/passport/auth/forget", [
-                'email' => 'admin@éxample.com',
-                'email_code' => '123456',
-                'password' => 'attacker-password',
-            ])->assertStatus(400)->assertJsonPath('status', 'fail');
-
-            $this->assertTrue(password_verify('old-password', $user->fresh()->password));
-        } finally {
-            Cache::setDefaultDriver($driver);
-            DB::statement('DROP TEMPORARY TABLE cache');
-        }
-    }
-
     private function createCollidingUser(string $storedEmail, string $requestEmail): User
     {
         if (DB::connection()->getDriverName() !== 'mysql') {

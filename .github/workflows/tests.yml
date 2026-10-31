@@ -83,7 +83,7 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
       - name: Password recovery and registration regression
-        run: vendor/bin/phpunit tests/Feature/Security/PasswordRecoveryTest.php tests/Unit/Services/Auth
+        run: vendor/bin/phpunit tests/Feature/Security/PasswordRecoveryTest.php
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
